@@ -17,12 +17,12 @@ public class gen_road : MonoBehaviour
     void Start()
     {
         DestinationRoads = new List<GameObject>();
-        for (int i = 0; i < Count; i++)
+        int i = 0;
+        foreach(var road in SourceRoads)
         {
-            var index = Random.Range(1, SourceRoads.Length);
-            GameObject obj = SourceRoads[index - 1];
-            
-            DestinationRoads.Add(obj);
+            road.transform.localPosition = new Vector3(road.transform.localScale.x * i, 0f, 0f);
+            DestinationRoads.Add(road);
+            i++;
         }
     }
 
@@ -40,9 +40,15 @@ public class gen_road : MonoBehaviour
 
     void MovingRoad()
     {
+        var count = DestinationRoads.Count - 1;
         foreach( var road in DestinationRoads)
         {
             road.transform.localPosition -= new Vector3(Speed * Time.deltaTime, 0f, 0f);
+
+            if (road.transform.localPosition.x < -road.transform.localScale.x)
+            {
+                road.transform.localPosition = new Vector3(road.transform.localScale.x * count, 0f, 0f);
+            }
         }
     }
 }
