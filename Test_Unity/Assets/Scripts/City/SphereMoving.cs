@@ -7,6 +7,7 @@ public class SphereMoving : MonoBehaviour
     //public float Strafe = 15;
     //Rigidbody rb;
     public float Speed = 10;
+    public Camera cam;
     CharacterController controller;
     bool left = false;
     bool right = false;
