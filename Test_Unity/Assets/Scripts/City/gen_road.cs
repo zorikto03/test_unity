@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Gen_road : MonoBehaviour
 {
-    [Header("Скорость движения дороги")]
-    public float Speed;
+    [Header("Персонаж")]
+    [SerializeField] private Transform Player;
 
     [Header("Количество генерированных дорог")]
     public int Count;
@@ -14,15 +14,9 @@ public class Gen_road : MonoBehaviour
     public GameObject[] SourceRoads;
 
 
-    private List<GameObject> _destinationRoads;
-    private int _counter;
-    private float _speed 
-    {
-        get
-        {
-            return Speed + (_counter * 1.5f);
-        } 
-    }
+    List<GameObject> _destinationRoads;
+    int _counter;
+    int _count;
 
     void Start()
     {   
@@ -42,34 +36,30 @@ public class Gen_road : MonoBehaviour
             {
                 road = SourceRoads[i];
             }
-            road.transform.localPosition = new Vector3(road.transform.localScale.x * i, 0f, 0f);
+            road.transform.localPosition = new Vector3(0f, 0f, road.transform.localScale.z * i);
             _destinationRoads.Add(road);
         }
-        
+        _count = _destinationRoads.Count - 1;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        GenerateRoad();
     }
 
     private void FixedUpdate()
     {
-
-        MovingRoad();
+        
     }
 
-    void MovingRoad()
+    void GenerateRoad()
     {
-        var count = _destinationRoads.Count - 1;
         foreach( var road in _destinationRoads)
         {
-            road.transform.localPosition -= new Vector3(_speed * Time.deltaTime, 0f, 0f);
-
-            if (road.transform.localPosition.x < -road.transform.localScale.x)
+            if (road.transform.position.z + (road.transform.localScale.z/2) < Player.position.z)
             {
-                road.transform.localPosition = new Vector3(road.transform.localScale.x * count, 0f, 0f);
+                road.transform.position = new Vector3(0f, 0f, road.transform.localScale.z * (_count + _counter));
                 _counter++;
             }
         }

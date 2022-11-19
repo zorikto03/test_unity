@@ -4,76 +4,115 @@ using UnityEngine;
 
 public class TouchEvent : MonoBehaviour
 {
-    [Header("Максимальная скорость сдвига в сторону")]
-    public float StrafSpeed = 5f;
+    public static TouchEvent Instance { get; private set; }
 
-    CharacterController controller;
+
+    [Header("Максимальная скорость сдвига в сторону")]
+    [SerializeField] private float StrafSpeed = 5f;
+
+    [Header("Максимальный стрейф в сторону")]
+    [SerializeField] private float LeftRightBorder = 4.5f;
+
+    [Header("Максимальный угол наклона камеры")]
+    [SerializeField] private float CamRotating = 30f;
+
+    [Header("Скорость поворота камеры")]
+    [SerializeField] private float CamRotatingSpeed = 15;
+
+    [Header("Скорость возврата камеры в 0")]
+    [SerializeField] private float ReturningCamRotatingSpeed = 10;
+
+    [Header("Объект камеры")]
+    [SerializeField] private Camera cam;
+
+    [SerializeField] public bool isPaused;
+
+    private float _eulerZ;
+
     Vector2 startPos = new();
     Resolution resolution;
     bool isSwipe;
-    bool isTouch;
+    float turningSide;
 
     private void Start()
     {
+        isPaused = false;
         resolution = Screen.currentResolution;
-        controller = GetComponent<CharacterController>();
+        turningSide = resolution.width / 3;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.touchCount > 0)
+        if (!isPaused)
         {
-            Touch touch = Input.GetTouch(0);
-
-            switch (touch.phase)
+            if (Input.touchCount > 0)
             {
-                case TouchPhase.Began:
-                    startPos = touch.position;
-                    StartCoroutine(Jump());
+                Touch touch = Input.GetTouch(0);
+
+                switch (touch.phase)
+                {
+                    case TouchPhase.Began:
+                        startPos = touch.position;
+                        StartCoroutine(Jump());
+                        break;
+                    case TouchPhase.Stationary:
+                    case TouchPhase.Moved:
+                        isSwipe = true;
+                        var swipeDistHorizontal = (touch.position.x - startPos.x);
+                        if (Mathf.Abs(swipeDistHorizontal) > turningSide)
+                        {
+                            swipeDistHorizontal = turningSide * (Mathf.Abs(swipeDistHorizontal) / swipeDistHorizontal);
+                        }
+                        var procent = swipeDistHorizontal / turningSide;
+
+                        var newPosition = transform.position;
+
+                        newPosition.x += procent * StrafSpeed * Time.deltaTime;
+
+                        newPosition.x = Mathf.Clamp(newPosition.x, -LeftRightBorder, LeftRightBorder);
+
+                        transform.position = newPosition;
+
+                        //cam rotation
+                        _eulerZ += procent * Time.deltaTime * CamRotatingSpeed;
+
+                        _eulerZ = Mathf.Clamp(_eulerZ, -CamRotating, CamRotating);
+
+                        cam.transform.eulerAngles = new Vector3(27, 0, _eulerZ);
+
+                        break;
+                    case TouchPhase.Ended:
+                        isSwipe = false;
+                        startPos = new();
+
                     break;
-                case TouchPhase.Stationary:
-                case TouchPhase.Moved:
-                    isSwipe = true;
-                    var swipeDistHorizontal = (touch.position.x - startPos.x) * -1;
-                    var procent = swipeDistHorizontal / resolution.width;
+                }
+            }
+            else
+            {
+                if (Mathf.Round(_eulerZ) > 0)
+                {
+                    _eulerZ -= ReturningCamRotatingSpeed * Time.deltaTime;
 
-                    Vector3? direction = null;
-                    if (swipeDistHorizontal < 0)//Right
-                    {
-                        direction = new Vector3(0, 0, procent);
-                        Debug.Log($"Right: {swipeDistHorizontal}; width: {resolution.width}: proc: {procent}");
-                    }
-                    else if(swipeDistHorizontal > 0)//Left
-                    {
-                        direction = new Vector3(0, 0, procent);
-                        Debug.Log($"Left: {swipeDistHorizontal}; width: {resolution.width}: proc: {procent}");
-                    }
+                }
+                else if (Mathf.Round(_eulerZ) < 0)
+                {
+                    _eulerZ += ReturningCamRotatingSpeed * Time.deltaTime;
+                }
 
-                    if (direction is not null)
-                    {
-                        //if (controller.transform.position.z < 4.5f || controller.transform.position.z > -4.5f)
-                        //{
-                        //}
-                        controller.Move((Vector3)direction * StrafSpeed * Time.deltaTime);
-                    }
-
-                    break;
-                case TouchPhase.Ended:
-                    isSwipe = false;
-                    isTouch = false;
-                    startPos = new();
-                break;
+                cam.transform.eulerAngles = new Vector3(27, 0, _eulerZ);
             }
         }
-        //foreach(Touch touch in Input.touches)
-        //{
-        //    Ray ray = Camera.main.ScreenPointToRay(touch.position);
-        //    if (Physics.Raycast(ray))
-        //    {
-        //        Instantiate(particle, transform.position, transform.rotation);
-        //    }
-        //}
+    }
+
+    private void FixedUpdate()
+    {
+        if (!isSwipe && !isPaused)
+        {
+            //cam.transform.rotation
+            Debug.Log($"CamRotating: {cam.transform.rotation.z}");
+        }
     }
 
     IEnumerator Jump()
@@ -106,5 +145,10 @@ public class TouchEvent : MonoBehaviour
     {
         Debug.Log("Right");
         yield return new WaitForSeconds(0.05f);
+    }
+
+    private void Awake()
+    {
+        Instance = this;
     }
 }

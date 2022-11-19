@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class MenuControls : MonoBehaviour
 {
+    public static MenuControls Instance { get; private set; }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -25,11 +27,23 @@ public class MenuControls : MonoBehaviour
 
     public void PausePressed()
     {
-        SceneManager.LoadScene("Menu");
+        //SceneManager.LoadScene("Menu");
+        
+        TouchEvent.Instance.isPaused = !TouchEvent.Instance.isPaused;
+    }
+
+    public void ContinuePressed()
+    {
+        TouchEvent.Instance.isPaused = false;
     }
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    private void Awake()
+    {
+        Instance = this;
     }
 }

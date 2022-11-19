@@ -1,37 +1,36 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SphereMoving : MonoBehaviour
 {
-    //public float Strafe = 15;
-    //Rigidbody rb;
-    public float Speed = 10;
-    public Camera cam;
-    CharacterController controller;
+    [SerializeReference] Animator animator;
+    [SerializeField] float Speed = 5;
+    [SerializeField] float MaxSpeed = 20;
+    [SerializeField] float StrafeSpeed = 10;
+    [SerializeField] float CamRotSpeed = 10;
+    [SerializeField] Camera cam;
+
+    float _eulerZ;
     bool left = false;
     bool right = false;
-
-    Direction direction;
-    float delta = 0;
-    void Start()
+    float camRotation;
+    float currentSpeed
     {
-        controller = GetComponent<CharacterController>();
-        direction = new();
+        get
+        {
+            var temp = transform.position.z / 10;
+            temp = (temp < MaxSpeed) ? temp : MaxSpeed;
+            return Speed + temp;
+        }
     }
 
-    // Update is called once per frame
+
+    void Start()
+    {
+        animator.SetBool("Run", true);
+    }
+
     void Update()
     {
-        if (Input.GetKeyDown("e"))
-        {
-            direction.Right();
-        }
-        if (Input.GetKeyDown("q"))
-        {
-            direction.Left();
-        }
-
         if (Input.GetKey("a"))
         {
             left = true;
@@ -44,86 +43,46 @@ public class SphereMoving : MonoBehaviour
         }
         else { right = false; }
 
-        if (Input.GetKeyDown("space"))
+        if (Input.GetKey(KeyCode.Space))
         {
-
+            animator.SetTrigger("Jump");
         }
     }
 
     private void FixedUpdate()
     {
-        var currentRot = transform.rotation.y;
-        var rot = Quaternion.Euler(0, direction.Rotation, 0);
+        Vector3 newPosition = transform.position ;
 
-        var rotDelta = rot.y - currentRot;
-
-        if (direction.isLeft)
+        if (left)
         {
-            delta -= rotDelta * Time.deltaTime * 10;
+            newPosition = transform.position - transform.right * StrafeSpeed * Time.deltaTime;
+            _eulerZ -= StrafeSpeed * Time.deltaTime;
         }
-        if (direction.isRight)
+        else if (right)
         {
-            delta += rotDelta * Time.deltaTime * 10;
+            newPosition = transform.position + transform.right * StrafeSpeed * Time.deltaTime;
+            _eulerZ += StrafeSpeed * Time.deltaTime;
         }
-
-        var tempRotation = Quaternion.Euler(0, delta, 0);
-        transform.rotation = tempRotation;
-        
-
-        //controller.Move(direction.Direct() * Speed * Time.deltaTime);
-        //MovementLogic();
-    }
-
-    //private void MovementLogic()
-    //{
-    //    if (left || right)
-    //    {
-    //        Vector3 movement = new Vector3(0f, 0.0f, left ? 1 : right ? -1 : 0);
-
-    //        rb.AddForce(movement * Strafe);
-    //    }
-        
-    //    rb.AddForce(direction.Value());
-    //}
-
-    class Direction
-    {
-        float cnst = 1;
-        int index = 0;
-        int finalIndex => (index > 3 || index < -3) ? index %= 4 : index;
-        float rotation = 0;
-
-        public bool isLeft = false;
-        public bool isRight = false;
-        public float Rotation => rotation;
-
-        public void Left()
+        else
         {
-            index++;
-            rotation -= 90f;
-            isLeft = true;
-            isRight = false;
-        }
-        public void Right()
-        {
-            index--;
-            rotation += 90f;
-            isRight = true;
-            isLeft = false;
-        }
-
-        public Vector3 Direct()
-        {
-            return finalIndex switch
+            if (Mathf.Round(_eulerZ) > 0)
             {
-                -3 => new Vector3(-cnst, 0, 0),
-                -2 => new Vector3(0, 0, cnst),
-                -1 => new Vector3(cnst, 0, 0),
-                0 => new Vector3(0, 0, -cnst),
-                1 => new Vector3(-cnst, 0, 0),
-                2 => new Vector3(0, 0, cnst),
-                3 => new Vector3(cnst, 0, 0),
-            };
+                _eulerZ -= CamRotSpeed * Time.deltaTime;
+
+            }
+            else if (Mathf.Round(_eulerZ) < 0)
+            {
+                _eulerZ += CamRotSpeed * Time.deltaTime;
+            }
         }
+
+        newPosition.z += currentSpeed * Time.deltaTime;
+
+        newPosition.x = Mathf.Clamp(newPosition.x, -4.5f, 4.5f);
+        transform.position = newPosition;
+
+        _eulerZ = Mathf.Clamp(_eulerZ, -30f, 30f);
+        Debug.Log($"currentRot after clamp : {_eulerZ}");
+        cam.transform.eulerAngles = new Vector3(27, 0, _eulerZ);
     }
 }
