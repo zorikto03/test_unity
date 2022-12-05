@@ -4,17 +4,105 @@ using UnityEngine;
 
 public class mainCamera : MonoBehaviour
 {
-    public GameObject mainObj;
+    [Header("Объект персонажа")]
+    [SerializeField] GameObject mainObj;
+
+    [SerializeField] int OffsetY = 3;
+    [SerializeField] float SpeedRotate = 10;
+
+    Vector3 basicRot;
+    bool left, right;
+    float _eulerX, _eulerZ;
+    
     private void Start()
     {
+        basicRot = transform.eulerAngles;
+        _eulerX = 27;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if (Input.GetKey("a"))
+        {
+            left = true;
+        }
+        else { left = false; }
+
+        if (Input.GetKey("d"))
+        {
+            right = true;
+        }
+        else { right = false; }
+
+
         var position = mainObj.transform.position;
-        position.y = 3;
+        position.y = OffsetY;
         position.z -= 4;
-        transform.position = position;
+        var tempY = Mathf.MoveTowards(transform.position.y, OffsetY, 1 * Time.deltaTime);
+
+        transform.position = new Vector3(position.x, tempY, position.z) ;
+    }
+
+    private void FixedUpdate()
+    {
+        RotateCam();
+    }
+
+    void RotateCam()
+    {
+        if (left)
+        {
+            _eulerZ -= SpeedRotate * Time.deltaTime;
+        }
+        else if (right)
+        {
+            _eulerZ += SpeedRotate * Time.deltaTime;
+        }
+        else
+        {
+            if (Mathf.Round(_eulerZ) > 0)
+            {
+                _eulerZ -= SpeedRotate / 2* Time.deltaTime;
+            }
+            else if (Mathf.Round(_eulerZ) < 0)
+            {
+                _eulerZ += SpeedRotate / 2* Time.deltaTime;
+            }
+        }
+
+        if (Mathf.Round(transform.eulerAngles.x) != _eulerX)
+        {
+            if(_eulerX < transform.eulerAngles.x)
+            {
+                transform.Rotate(new Vector3(-15 * Time.deltaTime, 0, 0));
+            }
+            else if (transform.eulerAngles.x < _eulerX)
+            {
+                transform.Rotate(new Vector3(15 * Time.deltaTime, 0, 0));
+            }
+        }
+
+        _eulerZ = Mathf.Clamp(_eulerZ, -30f, 30f);
+        transform.eulerAngles = new Vector3(transform.eulerAngles.x, 0, _eulerZ);
+    }
+
+    public void CameraDown()
+    {
+        OffsetY = 1;
+        _eulerX = 0;
+    }
+
+    public void CameraUp()
+    {
+        OffsetY = 3;
+        _eulerX = 27;
+    }
+
+    public void Restart()
+    {
+        _eulerX = 27;
+        OffsetY = 3;
+        transform.eulerAngles = new Vector3(_eulerX, 0, 0);
+        transform.position = new Vector3(transform.position.x, OffsetY, transform.position.z);
     }
 }
