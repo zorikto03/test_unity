@@ -8,8 +8,9 @@ public class PlayerMoving : MonoBehaviour
     [SerializeField] float MaxSpeed = 20;
     [SerializeField] float StrafeSpeed = 10;
     [SerializeField] float SpeedJump = 10;
-    //[SerializeField] float CamRotSpeed = 10;
+    [SerializeField] float BuffSpeed = 50;
     [SerializeField] Camera cam;
+    BuffTimer timer;
 
     Rigidbody rb;
     bool left = false;
@@ -42,11 +43,19 @@ public class PlayerMoving : MonoBehaviour
     {
         get
         {
-            var temp = transform.position.z / 10;
-            temp = (temp < MaxSpeed) ? temp : MaxSpeed;
-            return Speed + temp;
+            if (BuffType.none != currentBuff)
+            {
+                return BuffSpeed;
+            }
+            else
+            {
+                var temp = transform.position.z / 10;
+                temp = (temp < MaxSpeed) ? temp : MaxSpeed;
+                return Speed + temp;
+            }
         }
     }
+
 
     float Distance => transform.position.z / 10;
 
@@ -64,24 +73,28 @@ public class PlayerMoving : MonoBehaviour
         }
     }
 
+    BuffType currentBuff = BuffType.none;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         animator.SetBool("Run", true);
         characterValues = FindObjectOfType<CharacterValues>();
+        timer = GetComponent<BuffTimer>();
     }
 
     private void OnEnable()
     {
         onStopRun += StopRun;
         onStartRun += StartRun;
+        BuffTimer.OnSpeedTimerStoped += ResetBuffType;
     }
 
     private void OnDisable()
     {
         onStopRun -= StopRun;
         onStartRun -= StartRun;
+        BuffTimer.OnSpeedTimerStoped -= ResetBuffType;
     }
 
     void Update()
@@ -205,5 +218,29 @@ public class PlayerMoving : MonoBehaviour
         Vector3 newVelocity = new Vector3(0, 0, 0);
         newVelocity.z = CurrentSpeed;
         rb.velocity = newVelocity;
+    }
+
+    public void SetSpeedBuff(BuffType type)
+    {
+        var value = type switch
+        {
+            BuffType.SpeedBuff_10 => 10,
+            BuffType.SpeedBuff_30 => 30,
+            BuffType.SpeedBuff_50 => 50,
+            BuffType.SpeedNerf_10 => -10,
+            BuffType.SpeedNerf_20 => -20,
+            BuffType.SpeedNerf_30 => -30,
+            _ => 0
+        };
+        
+        BuffSpeed = value;
+        currentBuff = type;
+
+        timer.StartSpeed();
+    }
+
+    public void ResetBuffType()
+    {
+        currentBuff = BuffType.none;
     }
 }

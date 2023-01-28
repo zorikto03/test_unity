@@ -22,8 +22,7 @@ public class Barrier : MonoBehaviour
                 PlayerBehaviour behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
                 if (behaviour.HitHP())
                 {
-                    Destroy(gameObject);
-                    Instantiate(destroyEffect, transform.position, transform.rotation);
+                    DestroyBarrier();
                 }
                 break;
             case BarrierType.Jumper:
@@ -38,5 +37,11 @@ public class Barrier : MonoBehaviour
                 behaviour?.BurnIntoWall();
                 break;
         }
+    }
+
+    public void DestroyBarrier()
+    {
+        Destroy(gameObject);
+        Instantiate(destroyEffect, transform.position, transform.rotation);
     }
 }
