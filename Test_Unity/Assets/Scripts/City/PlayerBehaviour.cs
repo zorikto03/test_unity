@@ -17,6 +17,7 @@ public class PlayerBehaviour : MonoBehaviour
     {
         gunFire = GetComponent<GunFire>();
         progres = FindObjectOfType<Progres>();
+        playerMoving = GetComponent<PlayerMoving>();
     }
 
     public bool HitHP()
@@ -63,6 +64,13 @@ public class PlayerBehaviour : MonoBehaviour
             {
                 gunFire.SetBuffGun(type);
             }
+            return;
+        }
+
+        if (type == BuffType.RoadLeft ||
+            type == BuffType.RoadRight)
+        {
+            playerMoving.SetRoadSwap(type);
             return;
         }
 

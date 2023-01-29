@@ -14,7 +14,9 @@ public enum BuffType
     Gun_type1,
     Gun_type2,
     Gun_type3,
-    Health
+    Health,
+    RoadLeft,
+    RoadRight
 }
 
 public class BuffObjects : MonoBehaviour

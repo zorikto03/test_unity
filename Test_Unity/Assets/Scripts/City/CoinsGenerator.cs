@@ -16,12 +16,7 @@ public class CoinsGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _coinsOnRoad = new List<List<GameObject>>();
-        for (int i = 0; i < genRoad.GetCount; i++)
-        {
-            _coinsOnRoad.Add(new List<GameObject>());
-            GenerateCoins(i);
-        }
+        //MainMethod();
     }
 
     private void OnEnable()
@@ -34,6 +29,15 @@ public class CoinsGenerator : MonoBehaviour
         genRoad.OnGenerateRoad -= GenerateCoins;
     }
 
+    void MainMethod()
+    {
+        _coinsOnRoad = new List<List<GameObject>>();
+        for (int i = 0; i < genRoad.GetCount; i++)
+        {
+            _coinsOnRoad.Add(new List<GameObject>());
+            GenerateCoins(i);
+        }
+    }
 
     void GenerateCoins(int roadIndex)
     {

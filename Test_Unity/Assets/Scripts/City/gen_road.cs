@@ -9,10 +9,10 @@ public class Gen_road : MonoBehaviour
     [SerializeField] private Transform Player;
 
     [Header("Количество генерированных дорог")]
-    [SerializeField] int Count;
+    [SerializeField] int CountRoads;
 
     [Header("Исходные объекты дороги")]
-    [SerializeField] GameObject[] SourceRoads;
+    [SerializeField] Road[] SourceRoads;
 
     [Header("Объект монетки")]
     [SerializeField] GameObject Coin;
@@ -32,173 +32,94 @@ public class Gen_road : MonoBehaviour
         get => _currentType;
     }
 
-    public int GetCount => Count;
+    public int GetCount => CountRoads;
 
-    public List<KeyValuePair<int, GameObject>> DestinationRoads
+    public List<KeyValuePair<int, Road>> DestinationRoads
     {
         get => _destinationRoads;
     }
 
     public Action<int> OnGenerateRoad;
 
-    List<KeyValuePair<int, GameObject>> _destinationRoads;
+    List<KeyValuePair<int, Road>> _destinationRoads;
     List<List<GameObject>> _barrierRoad;
     GameObject _tubeRoad;
     int _currentType;
-    int _counter;
-    int _count;
+    int _lastRoadIndex => _destinationRoads.Count - 1;
     bool _typeIsChanged;
 
     private void Awake()
     {
-        StartGenRoad();
-
+        GenRoad();
     }
 
     // Update is called once per frame
     void Update()
     {
-        GenerateRoad();
+        MoveRoad();
     }
 
 
-    void StartGenRoad()
+    void GenRoad()
     {
-        _counter = 0;
         _currentType = 0;
-        _destinationRoads = new List<KeyValuePair<int, GameObject>>();
-        _barrierRoad = new List<List<GameObject>>();
+        _destinationRoads = new();
 
-        for (int i = 0; i < Count; i++)
+        for (int i = 0; i < CountRoads; i++)
         {
-            _barrierRoad.Add(new List<GameObject>());
-
-            GameObject road = Instantiate(SourceRoads[_currentType]);
-            road.transform.localPosition = new Vector3(0f, -0.05f, road.transform.localScale.z * i);
-
-            _destinationRoads.Add(new KeyValuePair<int, GameObject>(_currentType, road));
-            GenerateAll(i);
+            GenOneRoad();
         }
         
-        _count = _destinationRoads.Count - 1;
+    }
+
+    /// <summary>
+    /// Generator of one road, exist N chunks, generate by typeRoad
+    /// </summary>
+    void GenOneRoad(int type = -1)
+    {
+        if (type == -1)
+        {
+            type = _currentType;
+        }
+
+        var road = Instantiate(SourceRoads[type]);
+        road.GenerateRoad();
+
+        if (_destinationRoads.Count == 0)
+        {
+            road.transform.position = road.Begin.transform.localPosition;
+        }
+        else
+        {
+            road.transform.position = _destinationRoads[_destinationRoads.Count - 1].Value.End.position - road.Begin.transform.localPosition;
+        }
+
+        _destinationRoads.Add(new KeyValuePair<int, Road>(type, road));
     }
 
     public void Restart()
     {
         _destinationRoads.ForEach(r => Destroy(r.Value));
-        //_coinsOnRoad.ForEach(x => x.ForEach(y => Destroy(y)));
-        _barrierRoad.ForEach(x => x.ForEach(y => Destroy(y)));
-        Destroy(_tubeRoad);
-
-        StartGenRoad();
-    }
-
-    void GenerateRoad()
-    {
-        try
-        {
-            for (int i = 0; i < Count; i++)
-            {
-                GenerateRoad(i);
-                //GameObject road = _destinationRoads[i].Value;
-                //int type = _destinationRoads[i].Key;
-
-                //if (road != null)
-                //{
-                //    if (road.transform.position.z + (road.transform.localScale.z / 2) < Player.position.z)
-                //    {
-                //        Vector3 newPosition = road.transform.position;
-
-                //        if (_currentType != type)
-                //        {
-                //            _destinationRoads.RemoveAt(i);
-                //            Destroy(road);
-                        
-                //            road = Instantiate(SourceRoads[_currentType]);
-                //            newPosition.z = road.transform.localScale.z * (_count + _counter);
-                //            road.transform.position = newPosition;
-
-                //            _destinationRoads.Add(new KeyValuePair<int, GameObject> (_currentType, road));
-                //            GenerateAll(_destinationRoads.Count - 1);
-                //        }
-                //        else
-                //        {
-                //            newPosition.z = road.transform.localScale.z * (_count + _counter);
-                //            road.transform.position = newPosition;
-                //            GenerateAll(i);
-                //        }
-                //        _counter++;
-                //    }
-                //}
-            }
-        }
-        catch(Exception ex)
-        {
-            Debug.Log(ex.Message);
-        }
+        
+        GenRoad();
     }
 
     
 
-
-
-    void ClearBarrier(int index)
+    void MoveRoad()
     {
-        _barrierRoad[index].ForEach(x => Destroy(x));
-    }
-
-    void GenerateBarrier(int roadIndex, int count=5)
-    {
-        var road = _destinationRoads[roadIndex].Value;
-
-        var scale = road.transform.localScale.z / count;
-        var pos = road.transform.position;
-
-        ClearBarrier(roadIndex);
-
-        for (int i = 0; i < count; i++)
+        for(int roadIndex = 0; roadIndex < _destinationRoads.Count - 1; roadIndex++)
         {
-            var randZ = pos.z - scale * i;
-            var randX = UnityEngine.Random.Range(-1, 1) * 2;
-            var barrier = Instantiate(Barrier, new Vector3(randX, 0, randZ), Quaternion.identity);
-            _barrierRoad[roadIndex].Add(barrier);
-        }
-    }
+            var road = _destinationRoads[roadIndex].Value;
+            int type = _currentType != _destinationRoads[roadIndex].Key ? _currentType : _destinationRoads[roadIndex].Key;
 
-    void GenerateTube(int roadIndex)
-    {
-        var road = _destinationRoads[roadIndex].Value;
-
-        if (_tubeRoad != null)
-        {
-            Destroy(_tubeRoad);
-        }
-        _tubeRoad = Instantiate(Tube, new Vector3(0, 0, road.transform.position.z - road.transform.localScale.z / 2), Quaternion.identity);
-    }
-
-    void GenerateRoad(int roadIndex)
-    {
-        var road = _destinationRoads[roadIndex].Value;
-        int type = _destinationRoads[roadIndex].Key;
-
-        if (road.transform.position.z + (road.transform.localScale.z / 2) < Player.position.z)
-        {
-            Vector3 newPosition = road.transform.position;
-
-            if (_currentType != type)
+            if (road.End.position.z + 50 < Player.position.z)
             {
-                Destroy(road);
+                Destroy(road.gameObject);
+                _destinationRoads.RemoveAt(roadIndex);
 
-                road = Instantiate(SourceRoads[_currentType]);
-                
-                _destinationRoads[roadIndex] = new KeyValuePair<int, GameObject>(_currentType, road);
+                GenOneRoad(type);
             }
-            
-            newPosition.z = road.transform.localScale.z * (_count + _counter);
-            road.transform.position = newPosition;
-            _counter++;
-
-            GenerateAll(roadIndex);
         }
     }
 
@@ -213,7 +134,7 @@ public class Gen_road : MonoBehaviour
         //GenerateBarrier(index);
         if (_typeIsChanged)
         {
-            GenerateTube(index);
+            //GenerateTube(index);
             _typeIsChanged = false;
         }
     }

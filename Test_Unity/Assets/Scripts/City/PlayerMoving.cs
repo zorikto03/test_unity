@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class PlayerMoving : MonoBehaviour
 {
-    [SerializeReference] Animator animator;
     [SerializeField] float Speed = 5;
     [SerializeField] float MaxSpeed = 20;
     [SerializeField] float StrafeSpeed = 10;
@@ -18,6 +17,7 @@ public class PlayerMoving : MonoBehaviour
     float camRotation;
     bool _isPause;
     bool _isRun = true;
+    bool _roadLeftRight = false;//indicator of road swaping to left or right
     CharacterValues characterValues;
 
     public static Action onChangeRoad;
@@ -78,7 +78,6 @@ public class PlayerMoving : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        animator.SetBool("Run", true);
         characterValues = FindObjectOfType<CharacterValues>();
         timer = GetComponent<BuffTimer>();
     }
@@ -128,25 +127,21 @@ public class PlayerMoving : MonoBehaviour
 
     void MovingByTransform()
     {
-        Vector3 newVelocity = new Vector3(0, 0, 0);
-
-        if (left)
-        {
-            newVelocity.x = -StrafeSpeed;
-            //newPosition = transform.position - transform.right * StrafeSpeed * Time.deltaTime;
-        }
-        else if (right)
-        {
-            newVelocity.x = StrafeSpeed;
-            //newPosition = transform.position + transform.right * StrafeSpeed * Time.deltaTime;
-        }
+        Vector3 newVelocity = LeftRight(new Vector3(0, 0, 0));
 
         newVelocity.z = CurrentSpeed;
         rb.velocity = newVelocity;
         //newPosition.z += CurrentSpeed * Time.deltaTime;
 
         var newPos = transform.position;
-        newPos.x = Mathf.Clamp(newPos.x, -4.5f, 4.5f);
+        if (!_roadLeftRight)
+        {
+            newPos.x = Mathf.Clamp(newPos.x, -4.5f, 4.5f);
+        }
+        else
+        {
+            newPos.y = Mathf.Clamp(newPos.y, -4.5f, 4.5f);
+        }
         transform.position = newPos;
 
         if (changeRoadType)
@@ -157,17 +152,41 @@ public class PlayerMoving : MonoBehaviour
         characterValues.DisplayValues(CurrentSpeed, Distance);
     }
 
+    Vector3 LeftRight(Vector3 newVelocity)
+    {
+        if (left)
+        {
+            if (!_roadLeftRight)
+            {
+                newVelocity.x = -StrafeSpeed;
+            }
+            else
+            {
+                newVelocity.y = -StrafeSpeed;
+            }
+        }
+        if (right)
+        {
+            if (!_roadLeftRight)
+            {
+                newVelocity.x = StrafeSpeed;
+            }
+            else
+            {
+                newVelocity.y = StrafeSpeed;
+            }
+        }
+        return newVelocity;
+    }
+
     public void Jump()
     {
         rb.AddForce(transform.up * SpeedJump, ForceMode.Impulse);
-
-        animator.SetTrigger("Jump");
     }
 
     public void BurnIntoWall()
     {
         onStopRun?.Invoke();
-        animator.SetTrigger("BurnIntoWall");
     }
 
     /// <summary>
@@ -177,7 +196,6 @@ public class PlayerMoving : MonoBehaviour
     public void RunOrIdle(bool run)
     {
         IsRun = run;
-        animator.SetBool("Run", run);
 
         if (run)
         {
@@ -192,13 +210,11 @@ public class PlayerMoving : MonoBehaviour
     public void FallForward()
     {
         onStopRun?.Invoke();
-        animator.SetTrigger("FallForward");
     }
 
     public void Restart()
     {
         onStartRun?.Invoke();
-        animator.SetTrigger("Restart");
         _isRun = true;
         _isPause = false;
         transform.position = new Vector3(0, 0, 0);
@@ -242,5 +258,11 @@ public class PlayerMoving : MonoBehaviour
     public void ResetBuffType()
     {
         currentBuff = BuffType.none;
+    }
+
+    public void SetRoadSwap(BuffType type)
+    {
+        transform.position = new Vector3(type == BuffType.RoadLeft ? -9.5f : 9.5f, transform.position.y, transform.position.z);
+        _roadLeftRight = true;
     }
 }

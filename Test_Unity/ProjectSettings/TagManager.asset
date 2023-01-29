@@ -7,6 +7,9 @@ TagManager:
   - Floor
   - Wall
   - NextLevel
+  - FxTemporaire
+  - StartRoad
+  - EndRoad
   layers:
   - Default
   - TransparentFX
