@@ -43,7 +43,7 @@ public class CoinsGenerator : MonoBehaviour
     {
         try
         {
-            var road = genRoad.DestinationRoads[roadIndex].Value;
+            var road = genRoad.DestinationRoads[roadIndex];
 
             float one = road.transform.localScale.z / CountCoinsOnRoad;
             ClearCoinsRoad(roadIndex);

@@ -44,5 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 594cfcdb7c9d37c49bbb2a7cd10b9900, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunks: []
-  CountChunkInRoad: 0
+  chunks:
+  - {fileID: -6035895436421876767, guid: 27620cb9bed9d364a8671378dbde1b09, type: 3}
+  - {fileID: -6035895436421876767, guid: 9d9534443021e0841bfbb19640ea0bca, type: 3}
+  - {fileID: -6035895436421876767, guid: 187cad74d08bc6c4394311e4d6423603, type: 3}
+  - {fileID: -6035895436421876767, guid: a2892d7da9d5ecb46b6ec750f8ca11ad, type: 3}
+  Count: 3
+  type: 2

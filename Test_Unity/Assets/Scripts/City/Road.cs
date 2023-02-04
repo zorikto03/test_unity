@@ -2,13 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum RoadType
+{
+    Road,
+    Bridge,
+    Alley
+}
+
 public class Road : MonoBehaviour
 {
     [SerializeField] List<RoadChunk> chunks;
     [SerializeField] int Count;
+    [SerializeField] RoadType type;
 
     public Transform Begin => _destination[0].Begin;
     public Transform End => _destination[_lastChunkIndex].End;
+    public RoadType Type => type;
 
 
     List<RoadChunk> _destination = new();

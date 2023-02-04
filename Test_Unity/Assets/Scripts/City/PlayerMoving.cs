@@ -3,26 +3,34 @@ using UnityEngine;
 
 public class PlayerMoving : MonoBehaviour
 {
-    [SerializeField] float Speed = 5;
+    [SerializeField] float StartSpeed = 5;
     [SerializeField] float MaxSpeed = 20;
     [SerializeField] float StrafeSpeed = 10;
     [SerializeField] float SpeedJump = 10;
-    [SerializeField] float BuffSpeed = 50;
+    [SerializeField] float BrakeSpeed = 10;
     [SerializeField] Camera cam;
-    BuffTimer timer;
+    
+    public static Action onChangeRoad;
+    public static Action onStopRun;
+    public static Action onStartRun;
 
+    BuffTimer timer;
     Rigidbody rb;
     bool left = false;
     bool right = false;
+    bool accelerate = false;
+    bool brake = false;
     float camRotation;
     bool _isPause;
     bool _isRun = true;
     bool _roadLeftRight = false;//indicator of road swaping to left or right
     CharacterValues characterValues;
+    float _currentSpeed;
+    float buffSpeed;
+    float Distance => transform.position.z / 10;
+    int oldValueChangeRoadType = 0;
+    BuffType currentBuff = BuffType.none;
 
-    public static Action onChangeRoad;
-    public static Action onStopRun;
-    public static Action onStartRun;
 
     public bool IsRun
     {
@@ -32,34 +40,10 @@ public class PlayerMoving : MonoBehaviour
 
     public bool IsPaused
     {
-        set
-        {
-            _isPause = value;
-        }
+        set => _isPause = value;
         get => _isPause;
     }
 
-    float CurrentSpeed
-    {
-        get
-        {
-            if (BuffType.none != currentBuff)
-            {
-                return BuffSpeed;
-            }
-            else
-            {
-                var temp = transform.position.z / 10;
-                temp = (temp < MaxSpeed) ? temp : MaxSpeed;
-                return Speed + temp;
-            }
-        }
-    }
-
-
-    float Distance => transform.position.z / 10;
-
-    int oldValueChangeRoadType = 0;
     bool changeRoadType {
         get
         {
@@ -73,7 +57,6 @@ public class PlayerMoving : MonoBehaviour
         }
     }
 
-    BuffType currentBuff = BuffType.none;
 
     void Start()
     {
@@ -98,17 +81,13 @@ public class PlayerMoving : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey("a"))
-        {
-            left = true;
-        }
-        else { left = false; }
+        left = Input.GetKey(KeyCode.A);
+        
+        right = Input.GetKey(KeyCode.D);
+        
+        accelerate = Input.GetKey(KeyCode.W);
 
-        if (Input.GetKey("d"))
-        {
-            right = true;
-        }
-        else { right = false; }
+        brake = Input.GetKey(KeyCode.S);
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -125,11 +104,55 @@ public class PlayerMoving : MonoBehaviour
         MovingByTransform();
     }
 
+    float SpeedAcceleration()
+    {
+        if (currentBuff == BuffType.none)
+        {
+            if (accelerate && !brake)
+            {
+                if (_currentSpeed < MaxSpeed)
+                {
+                    _currentSpeed += MaxSpeed / _currentSpeed * Time.deltaTime * 2;
+                }
+                else
+                {
+                    _currentSpeed -= MaxSpeed / _currentSpeed * Time.deltaTime;
+                }
+            }
+            else if (!accelerate && !brake){
+                if (_currentSpeed > StartSpeed)
+                {
+                    _currentSpeed -= MaxSpeed / 20 * Time.deltaTime;
+                }
+                else
+                {
+                    _currentSpeed = StartSpeed;
+                }
+            }
+            else if (!accelerate && brake)
+            {
+                if (_currentSpeed > StartSpeed)
+                {
+                    _currentSpeed -= MaxSpeed / BrakeSpeed * Time.deltaTime;
+                }
+                else
+                {
+                    _currentSpeed = StartSpeed;
+                }
+            }
+        }
+        else
+        {
+            _currentSpeed += (MaxSpeed * buffSpeed) / _currentSpeed * Time.deltaTime * 2;
+        }
+        return _currentSpeed;
+    }
+
     void MovingByTransform()
     {
         Vector3 newVelocity = LeftRight(new Vector3(0, 0, 0));
 
-        newVelocity.z = CurrentSpeed;
+        newVelocity.z = SpeedAcceleration();
         rb.velocity = newVelocity;
         //newPosition.z += CurrentSpeed * Time.deltaTime;
 
@@ -149,7 +172,7 @@ public class PlayerMoving : MonoBehaviour
             onChangeRoad?.Invoke();
         }
 
-        characterValues.DisplayValues(CurrentSpeed, Distance);
+        characterValues.DisplayValues(_currentSpeed, Distance);
     }
 
     Vector3 LeftRight(Vector3 newVelocity)
@@ -217,6 +240,7 @@ public class PlayerMoving : MonoBehaviour
         onStartRun?.Invoke();
         _isRun = true;
         _isPause = false;
+        _currentSpeed = StartSpeed;
         transform.position = new Vector3(0, 0, 0);
     }
 
@@ -232,7 +256,7 @@ public class PlayerMoving : MonoBehaviour
     {
         _isRun = true;
         Vector3 newVelocity = new Vector3(0, 0, 0);
-        newVelocity.z = CurrentSpeed;
+        newVelocity.z = _currentSpeed;
         rb.velocity = newVelocity;
     }
 
@@ -240,16 +264,16 @@ public class PlayerMoving : MonoBehaviour
     {
         var value = type switch
         {
-            BuffType.SpeedBuff_10 => 10,
-            BuffType.SpeedBuff_30 => 30,
-            BuffType.SpeedBuff_50 => 50,
-            BuffType.SpeedNerf_10 => -10,
-            BuffType.SpeedNerf_20 => -20,
-            BuffType.SpeedNerf_30 => -30,
+            BuffType.SpeedBuff_1 => 2,
+            BuffType.SpeedBuff_2 => 4,
+            BuffType.SpeedBuff_3 => 6,
+            BuffType.SpeedNerf_1 => -2,
+            BuffType.SpeedNerf_2 => -4,
+            BuffType.SpeedNerf_3 => -6,
             _ => 0
         };
         
-        BuffSpeed = value;
+        buffSpeed = value;
         currentBuff = type;
 
         timer.StartSpeed();

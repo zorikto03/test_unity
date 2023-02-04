@@ -5,12 +5,12 @@ using UnityEngine;
 public enum BuffType
 {
     none,
-    SpeedBuff_10,
-    SpeedBuff_30,
-    SpeedBuff_50,
-    SpeedNerf_10,
-    SpeedNerf_20,
-    SpeedNerf_30,
+    SpeedBuff_1,
+    SpeedBuff_2,
+    SpeedBuff_3,
+    SpeedNerf_1,
+    SpeedNerf_2,
+    SpeedNerf_3,
     Gun_type1,
     Gun_type2,
     Gun_type3,
