@@ -44,6 +44,13 @@ public class PlayerMoving : MonoBehaviour
         get => _isPause;
     }
 
+    public float CurrentSpeed => _currentSpeed;
+    public float GetMaxSpeed => MaxSpeed;
+
+    public bool Accelerate => accelerate;
+    public bool Brake => brake;
+    public float BuffSpeed => buffSpeed;
+
     bool changeRoadType {
         get
         {
@@ -172,7 +179,7 @@ public class PlayerMoving : MonoBehaviour
             onChangeRoad?.Invoke();
         }
 
-        characterValues.DisplayValues(_currentSpeed, Distance);
+        characterValues.SetSpeedDistance(_currentSpeed, Distance);
     }
 
     Vector3 LeftRight(Vector3 newVelocity)
@@ -242,6 +249,8 @@ public class PlayerMoving : MonoBehaviour
         _isPause = false;
         _currentSpeed = StartSpeed;
         transform.position = new Vector3(0, 0, 0);
+        currentBuff = BuffType.none;
+        buffSpeed = 0;
     }
 
     public void StopRun()
@@ -282,6 +291,7 @@ public class PlayerMoving : MonoBehaviour
     public void ResetBuffType()
     {
         currentBuff = BuffType.none;
+        buffSpeed = 0;
     }
 
     public void SetRoadSwap(BuffType type)

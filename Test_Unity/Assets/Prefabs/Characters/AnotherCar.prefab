@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1139222394199956845}
   m_Layer: 0
   m_Name: AnotherCar
-  m_TagString: Untagged
+  m_TagString: BarrierCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

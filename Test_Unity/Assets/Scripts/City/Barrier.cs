@@ -16,26 +16,29 @@ public class Barrier : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        switch (type)
+        if (other.CompareTag("Player"))
         {
-            case BarrierType.Stoper:
-                PlayerBehaviour behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
-                if (behaviour.HitHP())
-                {
-                    DestroyBarrier();
-                }
-                break;
-            case BarrierType.Jumper:
-                PlayerMoving playerMoving = other.attachedRigidbody.GetComponent<PlayerMoving>();
-                if (playerMoving)
-                {
-                    playerMoving.Jump();
-                }
-                break;
-            case BarrierType.Wall:
-                behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
-                behaviour?.BurnIntoWall();
-                break;
+            switch (type)
+            {
+                case BarrierType.Stoper:
+                    PlayerBehaviour behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
+                    if (behaviour.HitHP())
+                    {
+                        DestroyBarrier();
+                    }
+                    break;
+                case BarrierType.Jumper:
+                    PlayerMoving playerMoving = other.attachedRigidbody.GetComponent<PlayerMoving>();
+                    if (playerMoving)
+                    {
+                        playerMoving.Jump();
+                    }
+                    break;
+                case BarrierType.Wall:
+                    behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
+                    behaviour?.BurnIntoWall();
+                    break;
+            }
         }
     }
 

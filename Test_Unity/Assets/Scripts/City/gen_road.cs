@@ -18,9 +18,6 @@ public class Gen_road : MonoBehaviour
     [Header("Исходный объект машин-преград")]
     [SerializeField] BarrierCar BarrierCars;
 
-    [Header("Расстояние от игрока для уничтожения машины-преграды")]
-    [SerializeField] int DistanceDestroying;
-
     [Header("Объект монетки")]
     [SerializeField] GameObject Coin;
 
@@ -47,14 +44,10 @@ public class Gen_road : MonoBehaviour
     }
 
     object roadLocker = new object();
-    object carLocker = new object();
-
-
 
     public Action<int> OnGenerateRoad;
 
     List<Road> _destinationRoads;
-    List<BarrierCar> _barrierCars;
     List<List<GameObject>> _barrierRoad;
     GameObject _tubeRoad;
     int _currentType;
@@ -163,38 +156,9 @@ public class Gen_road : MonoBehaviour
     #endregion RoadMethods
 
     #region CarsMethods
-    BarrierCar GetCar(int index)
-    {
-        lock (carLocker)
-        {
-            return _barrierCars[index];
-        }
-    }
-
-    void RemoveCar(BarrierCar car)
-    {
-        lock (carLocker)
-        {
-            if (_barrierCars.Contains(car))
-            {
-                _barrierCars.Remove(car);
-            }
-        }
-    }
-
-    void AddCar(BarrierCar car)
-    {
-        lock (carLocker)
-        {
-            _barrierCars.Add(car);
-        }
-    }
-
-
+    
     void GenCars()
     {
-        _barrierCars = new();
-
         for (int i = 0; i < _destinationRoads.Count; i++)
         {
             var countCars = UnityEngine.Random.Range(2, 4);
@@ -228,20 +192,10 @@ public class Gen_road : MonoBehaviour
 
         }
         var car = Instantiate(BarrierCars, pos, new Quaternion(0, pos.x < 0 ? 180 : 0, 0, 0));
-        AddCar(car);
     }
 
     void MoveCars()
     {
-        for (int i = 0; i < _barrierCars.Count; i++)
-        {
-            var car = GetCar(i);
-            if ((Player.position.z - car.transform.position.z) > DistanceDestroying)
-            {
-                RemoveCar(car);
-                Destroy(car.gameObject);
-            }
-        }
         var countCars = UnityEngine.Random.Range(2, 4);
         for (int j = 0; j < countCars; j++)
         {
@@ -255,9 +209,13 @@ public class Gen_road : MonoBehaviour
 
     public void Restart()
     {
-        _destinationRoads.ForEach(r => Destroy(r));
+        lock (roadLocker)
+        {
+            _destinationRoads.ForEach(r => Destroy(r));
+        }
         
         GenRoad();
+        GenCars();
     }
 
     

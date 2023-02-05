@@ -9,13 +9,18 @@ public class mainCamera : MonoBehaviour
 
     [SerializeField] int OffsetY = 3;
     [SerializeField] float SpeedRotate = 10;
-
+    
+    PlayerMoving player;
     Vector3 basicRot;
     bool left, right;
     float _eulerX, _eulerZ;
-    
+    int minFOV = 60;
+    int maxFOV = 70;
+    int buffSpeedFOV = 90;
+
     private void Start()
     {
+        player = FindObjectOfType<PlayerMoving>();
         basicRot = transform.eulerAngles;
         _eulerX = 27;
     }
@@ -46,6 +51,7 @@ public class mainCamera : MonoBehaviour
     private void FixedUpdate()
     {
         RotateCam();
+        CHangeFOV();
     }
 
     void RotateCam()
@@ -104,5 +110,30 @@ public class mainCamera : MonoBehaviour
         OffsetY = 3;
         transform.eulerAngles = new Vector3(_eulerX, 0, 0);
         transform.position = new Vector3(transform.position.x, OffsetY, transform.position.z);
+    }
+
+    void CHangeFOV()
+    {
+        var camera = GetComponent<Camera>();
+        
+        if (player.BuffSpeed > 0 && camera.fieldOfView < buffSpeedFOV)
+        {
+            camera.fieldOfView += buffSpeedFOV / camera.fieldOfView / player.BuffSpeed;
+        }
+        else if (player.Accelerate && camera.fieldOfView < maxFOV && player.CurrentSpeed > player.GetMaxSpeed / 2)
+        {
+            camera.fieldOfView = maxFOV / camera.fieldOfView / 7  + camera.fieldOfView;            
+        }
+        else if (!player.Accelerate && camera.fieldOfView > minFOV)
+        {
+            if (!player.Brake)
+            {
+                camera.fieldOfView -= maxFOV / camera.fieldOfView / 10;
+            }
+            else
+            {
+                camera.fieldOfView -= maxFOV / camera.fieldOfView / 5;
+            }
+        }
     }
 }

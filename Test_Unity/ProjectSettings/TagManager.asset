@@ -10,6 +10,7 @@ TagManager:
   - FxTemporaire
   - StartRoad
   - EndRoad
+  - BarrierCar
   layers:
   - Default
   - TransparentFX

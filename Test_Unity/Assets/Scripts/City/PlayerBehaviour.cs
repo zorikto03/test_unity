@@ -9,6 +9,7 @@ public class PlayerBehaviour : MonoBehaviour
     [SerializeField] AudioSource wallKick;
 
     PlayerMoving playerMoving;
+    CharacterValues characterValues;
     Progres progres;
     GunFire gunFire;
     BuffType currentType;
@@ -18,6 +19,7 @@ public class PlayerBehaviour : MonoBehaviour
         gunFire = GetComponent<GunFire>();
         progres = FindObjectOfType<Progres>();
         playerMoving = GetComponent<PlayerMoving>();
+        characterValues = FindObjectOfType<CharacterValues>();
     }
 
     public bool HitHP()
@@ -27,7 +29,9 @@ public class PlayerBehaviour : MonoBehaviour
             HealthPoint--;
         }
 
-        if(HealthPoint <= 0)
+        characterValues.SetHP(HealthPoint);
+
+        if (HealthPoint <= 0)
         {
             BurnIntoWall();
             return false;
@@ -41,6 +45,7 @@ public class PlayerBehaviour : MonoBehaviour
         {
             HealthPoint++;
         }
+        characterValues.SetHP(HealthPoint);
     }
 
     public void SetBuff(BuffType type)
@@ -96,6 +101,7 @@ public class PlayerBehaviour : MonoBehaviour
         progres.Coins = coinManager.GetCountCoins;
         FindObjectOfType<GameManager>().GameOver();
         HealthPoint = 3;
+        characterValues.SetHP(HealthPoint);
         //Destroy(gameObject);
     }
 }

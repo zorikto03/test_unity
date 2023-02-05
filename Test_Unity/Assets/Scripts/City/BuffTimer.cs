@@ -57,5 +57,14 @@ public class BuffTimer : MonoBehaviour
                 OnGunTimerStoped?.Invoke();
             }
         }
-    }    
+    }   
+    
+    public void StopTimer()
+    {
+        _timeSpeedRemaining = 0;
+        _speedRunning = false;
+
+        _timeGunRemaining = 0;
+        _gunRunning = false;
+    }
 }
