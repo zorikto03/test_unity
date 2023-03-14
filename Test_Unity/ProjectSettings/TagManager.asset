@@ -11,6 +11,7 @@ TagManager:
   - StartRoad
   - EndRoad
   - BarrierCar
+  - ParticleSystem
   layers:
   - Default
   - TransparentFX
@@ -18,7 +19,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - PostProcessing
   - 
   - 
   - 

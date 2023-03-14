@@ -48,7 +48,5 @@ MonoBehaviour:
   - {fileID: -6035895436421876767, guid: 44d91a66b74a4d24ba83c727b0acdd3a, type: 3}
   - {fileID: 1922983981413690904, guid: 4f4b731032b42a449a4b9bda5e56f7fb, type: 3}
   - {fileID: 6529459041983146287, guid: ddf5a654b55ff634a87f20215fd3c350, type: 3}
-  - {fileID: 6264542807905662023, guid: 398718942b97eb6489a4ce4d515bcf35, type: 3}
-  - {fileID: 1338396187316423753, guid: ee62c9cbab4a07a479f1fbcef5c311c2, type: 3}
-  Count: 3
+  Count: 1
   type: 1

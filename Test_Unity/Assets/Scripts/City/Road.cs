@@ -20,20 +20,25 @@ public class Road : MonoBehaviour
     public RoadType Type => type;
 
 
-    List<RoadChunk> _destination = new();
+    List<RoadChunk> _destination;
     int _lastChunkIndex => _destination.Count - 1;
     Transform parent;
 
 
-    public void GenerateRoad()
+    public void GenerateRoad(List<BuffObjects> buffs)
     {
+        _destination = new();
         parent = transform;
 
         if (chunks != null)
         {
             for (int i = 0; i < Count; i++)
             {
-                CreateChunk(Random.Range(0, chunks.Count - 1));
+                CreateChunk(Random.Range(0, chunks.Count));
+            }
+            if (buffs != null && buffs.Count != 0)
+            {
+                genBuffObjects(buffs);
             }
         }
     }
@@ -51,5 +56,26 @@ public class Road : MonoBehaviour
         }
         _destination.Add(chunk);
     }
+    void genBuffObjects(List<BuffObjects> buffs)
+    {
+        if (Random.Range(0, 2) == 1)
+        {
+            var rand = Random.Range(0, buffs.Count);
+            var buff = Instantiate(buffs[rand], parent);
+            
+            var pos = chunks[0].transform.localPosition;
+            var randPosX = Random.Range(1, 5);
+            pos.y = 0.5f;
+            pos.x = randPosX switch
+            {
+                1 => -4,
+                2 => -1.5f,
+                3 => 1.5f,
+                4 => 4,
+                _ => 4
+            };
 
+            buff.transform.localPosition = pos;
+        }
+    }
 }

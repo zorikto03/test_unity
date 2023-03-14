@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,7 @@ public enum BuffType
     Gun_type2,
     Gun_type3,
     Health,
+    Jump,
     RoadLeft,
     RoadRight
 }
@@ -22,7 +24,14 @@ public enum BuffType
 public class BuffObjects : MonoBehaviour
 {
     [SerializeField] BuffType type;
+    [SerializeField] GameObject TakeEffect;
 
+    ParticleSystemController LightEffect;
+
+    void Start()
+    {
+        LightEffect = transform.GetComponentInChildren<ParticleSystemController>();
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -30,7 +39,17 @@ public class BuffObjects : MonoBehaviour
         if (player != null)
         {
             player.SetBuff(type);
+            var effect = Instantiate(TakeEffect, player.transform);
+            effect.transform.localPosition = new Vector3(0, 1.2f, 0);
+
+            LightEffect.DestroyParticle();
+
             Destroy(gameObject);
         }
+    }
+
+    private void Update()
+    {
+        transform.Rotate(new Vector3(0, 180f * Time.deltaTime, 0));
     }
 }

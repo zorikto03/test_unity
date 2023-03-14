@@ -23,15 +23,14 @@ public class Gen_road : MonoBehaviour
 
     [Header("Объект барьера")]
     [SerializeField] GameObject Barrier;
-    
-    [Header("Объект коридора")]
-    [SerializeField] GameObject Tube;
+
+    [Header("Объекты buff")]
+    [SerializeField] List<BuffObjects> buffs;
 
     public int CurrentType
     {
         set {
             _currentType = value % SourceRoads.Count;
-            _typeIsChanged = true;
         }
         get => _currentType;
     }
@@ -48,16 +47,13 @@ public class Gen_road : MonoBehaviour
     public Action<int> OnGenerateRoad;
 
     List<Road> _destinationRoads;
-    List<List<GameObject>> _barrierRoad;
-    GameObject _tubeRoad;
     int _currentType;
     int _lastRoadIndex => _destinationRoads.Count - 1;
-    bool _typeIsChanged;
 
     private void Awake()
     {
         GenRoad(); 
-        GenCars();
+        //GenCars();
     }
 
     // Update is called once per frame
@@ -116,7 +112,7 @@ public class Gen_road : MonoBehaviour
             type = _currentType;
         }
         var road = _destinationRoads.Count >= CountRoads - 1 ? GenerateNextRoad() : Instantiate(SourceRoads[type]);
-        road.GenerateRoad();
+        road.GenerateRoad(buffs);
 
         if (_destinationRoads.Count == 0)
         {
@@ -157,51 +153,38 @@ public class Gen_road : MonoBehaviour
 
     #region CarsMethods
     
-    void GenCars()
+    void GenOneCar(Road road, int carCount, int carIndex)
     {
-        for (int i = 0; i < _destinationRoads.Count; i++)
+        float deltaBetweenCars = (road.End.transform.position.z - road.Begin.transform.position.z) / (carCount + 2) * (carIndex + 1);
+
+        var rand = UnityEngine.Random.Range(1, 5);
+        var z = road.Begin.transform.position.z + deltaBetweenCars;
+        var pos = new Vector3(0, 0, z);
+        var delta = UnityEngine.Random.Range(-0.2f, 0.2f);
+        pos.x = rand switch
         {
-            var countCars = UnityEngine.Random.Range(2, 4);
+            1 => -4,
+            2 => -1.5f,
+            3 => 1.5f,
+            4 => 4,
+            _ => 4
+        } + delta;
+
+        var car = Instantiate(BarrierCars, pos, new Quaternion(0, pos.x < 0 ? 180 : 0, 0, 0));
+    }
+
+    void GenCarsOnRoad(int roadIndex)
+    {
+        if (BarrierCars != null)
+        {
+            var countCars = UnityEngine.Random.Range(10, 20);
             for (int j = 0; j < countCars; j++)
             {
-                GenOneCar(i);
+                GenOneCar(_destinationRoads[roadIndex], countCars, j);
             }
         }
     }
 
-    void GenOneCar(int indexRoad)
-    {
-        var rand = UnityEngine.Random.Range(1, 4);
-        var road = GetRoad(indexRoad);
-        var z = UnityEngine.Random.Range(road.Begin.transform.position.z, road.End.transform.position.z);
-        var pos = new Vector3(0, 0, z);
-        switch (rand)
-        {
-            case 1:
-                pos.x = -4;
-                break;
-            case 2:
-                pos.x = -1.5f;
-                break;
-            case 3:
-                pos.x = 1.5f;
-                break;
-            case 4:
-                pos.x = 4;
-                break;
-
-        }
-        var car = Instantiate(BarrierCars, pos, new Quaternion(0, pos.x < 0 ? 180 : 0, 0, 0));
-    }
-
-    void MoveCars()
-    {
-        var countCars = UnityEngine.Random.Range(2, 4);
-        for (int j = 0; j < countCars; j++)
-        {
-            GenOneCar(_lastRoadIndex);
-        }
-    }
     #endregion
 
 
@@ -211,11 +194,14 @@ public class Gen_road : MonoBehaviour
     {
         lock (roadLocker)
         {
-            _destinationRoads.ForEach(r => Destroy(r));
+            _destinationRoads.ForEach(r =>
+            {
+                Destroy(r.gameObject);
+            });
         }
         
         GenRoad();
-        GenCars();
+        //GenCars();
     }
 
     
@@ -234,24 +220,8 @@ public class Gen_road : MonoBehaviour
 
                 GenOneRoad();
 
-                MoveCars();
+                GenCarsOnRoad(_lastRoadIndex);
             }
-        }
-    }
-
-    /// <summary>
-    /// Common method for generating objects
-    /// </summary>
-    /// <param name="index"></param>
-    void GenerateAll(int index)
-    {
-        OnGenerateRoad?.Invoke(index);
-        //GenerateCoins(index);
-        //GenerateBarrier(index);
-        if (_typeIsChanged)
-        {
-            //GenerateTube(index);
-            _typeIsChanged = false;
         }
     }
 }

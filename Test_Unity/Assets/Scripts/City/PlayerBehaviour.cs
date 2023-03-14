@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,37 +7,84 @@ public class PlayerBehaviour : MonoBehaviour
 {
     [SerializeField] int HealthPoint;
     [SerializeField] CoinManager coinManager;
-    [SerializeField] AudioSource wallKick;
+    [SerializeField] GameObject hitEffect;
+    [SerializeField] float ImmortalTime = 1f;
 
     PlayerMoving playerMoving;
     CharacterValues characterValues;
-    Progres progres;
+    CarSound carSound;
     GunFire gunFire;
+    mainCamera myCamera;
     BuffType currentType;
+    bool _immortal = false;
+    float _immortalTime;
+    bool _immortalTimer;
+
+    public delegate void HpPlusEvent(int countHP);
+    public static event HpPlusEvent HPPlusEvent;
+    public static Action GameOverEvent;
 
     private void Start()
     {
         gunFire = GetComponent<GunFire>();
-        progres = FindObjectOfType<Progres>();
         playerMoving = GetComponent<PlayerMoving>();
         characterValues = FindObjectOfType<CharacterValues>();
+        myCamera = FindObjectOfType<mainCamera>();
+        carSound = GetComponent<CarSound>();
+
+        characterValues.SetHP(HealthPoint);
+    }
+
+    private void Update()
+    {
+        if (_immortal)
+        {
+            if (_immortalTime > 0)
+            {
+                _immortalTime -= Time.deltaTime;
+            }
+            else
+            {
+                _immortalTime = 0;
+                _immortal = false;
+            }
+        }
     }
 
     public bool HitHP()
     {
-        if (HealthPoint > 0)
-        {
-            HealthPoint--;
-        }
+        var hit = Instantiate(hitEffect, transform);
+        hit.transform.localPosition = new Vector3(0, 1.5f, 0);
+        carSound.HitSoundPlay();
 
-        characterValues.SetHP(HealthPoint);
-
-        if (HealthPoint <= 0)
+        if (!_immortal)
         {
-            BurnIntoWall();
-            return false;
+            if (HealthPoint > 0)
+            {
+                HealthPoint--;
+                playerMoving.BarrierEncounter();
+                myCamera.ShakeCamera();
+                characterValues.SetHP(HealthPoint);
+            }
+
+            if (HealthPoint <= 0)
+            {
+                StopGame();
+                characterValues.SetHP(HealthPoint);
+                return false;
+            }
+            return true;
         }
-        return true;
+        else
+        {
+            return true;
+        }
+    }
+
+    public void SetImmortal()
+    {
+        _immortal = true;
+        _immortalTime = ImmortalTime;
     }
 
     public void PlusHP()
@@ -45,6 +93,7 @@ public class PlayerBehaviour : MonoBehaviour
         {
             HealthPoint++;
         }
+        HPPlusEvent?.Invoke(HealthPoint);
         characterValues.SetHP(HealthPoint);
     }
 
@@ -79,29 +128,49 @@ public class PlayerBehaviour : MonoBehaviour
             return;
         }
 
+        if(type == BuffType.Jump)
+        {
+            playerMoving.SetJumpBuff();
+            return;
+        }
+
         playerMoving.SetSpeedBuff(type);
     }
 
-    public void BurnIntoWall()
+    public void StopGame()
     {
-        playerMoving.BurnIntoWall();
-        wallKick.Play();
+        carSound.AlarmSoundPlay();
         GameOver();
     }
 
     public void HitedByBarrier()
     {
-        wallKick.Play();
-        playerMoving.FallForward();
+        carSound.HitSoundPlay();
+        carSound.AlarmSoundPlay();
+
         GameOver();
     }
 
     void GameOver()
     {
-        progres.Coins = coinManager.GetCountCoins;
-        FindObjectOfType<GameManager>().GameOver();
+        GameOverEvent.Invoke();
+        if (Progres.Instance != null)
+        {
+            Progres.Instance.PlayerInfo.Coins = coinManager.GetCountCoins;
+        }
+        playerMoving.GameOver();
+    }
+
+    public void ContinueByWatchingAdv()
+    {
+        HealthPoint = 1;
+        characterValues.SetHP(HealthPoint);
+        SetImmortal();
+    }
+
+    public void Restart()
+    {
         HealthPoint = 3;
         characterValues.SetHP(HealthPoint);
-        //Destroy(gameObject);
     }
 }

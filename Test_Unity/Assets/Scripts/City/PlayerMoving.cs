@@ -1,18 +1,18 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMoving : MonoBehaviour
 {
-    [SerializeField] float StartSpeed = 5;
     [SerializeField] float MaxSpeed = 20;
     [SerializeField] float StrafeSpeed = 10;
     [SerializeField] float SpeedJump = 10;
-    [SerializeField] float BrakeSpeed = 10;
     [SerializeField] Camera cam;
-    
+    [SerializeField] Motor motor;
+
     public static Action onChangeRoad;
-    public static Action onStopRun;
-    public static Action onStartRun;
+    public delegate void BrakeEvent(bool isBrake);
+    public static event BrakeEvent OnBrakeEvent;
 
     BuffTimer timer;
     Rigidbody rb;
@@ -20,15 +20,14 @@ public class PlayerMoving : MonoBehaviour
     bool right = false;
     bool accelerate = false;
     bool brake = false;
-    float camRotation;
+    bool buff = false;
     bool _isPause;
     bool _isRun = true;
     bool _roadLeftRight = false;//indicator of road swaping to left or right
     CharacterValues characterValues;
-    float _currentSpeed;
-    float buffSpeed;
-    float Distance => transform.position.z / 10;
-    int oldValueChangeRoadType = 0;
+    PlayerDistanceManager playerDistanceManager;
+    float _currentSpeed = 0f;
+    int buffSpeed;
     BuffType currentBuff = BuffType.none;
 
 
@@ -44,45 +43,35 @@ public class PlayerMoving : MonoBehaviour
         get => _isPause;
     }
 
+    public float Distance => transform.position.z / 10;
     public float CurrentSpeed => _currentSpeed;
-    public float GetMaxSpeed => MaxSpeed;
-
+    public float GetMaxSpeed => motor.MaxSpeed;
+    public bool Deceleration => motor.Deceleration; //проверка снижается скорость или нет
     public bool Accelerate => accelerate;
     public bool Brake => brake;
-    public float BuffSpeed => buffSpeed;
+    public bool Buff => buff;
+    public int BuffSpeed => buffSpeed;
+    public float MotorTorgue => motor.CurrentMotorTorgue;
 
-    bool changeRoadType {
-        get
-        {
-            var temp = (int)transform.position.z / (500 /** CurrentSpeed * 0.1*/);
-            if (oldValueChangeRoadType < temp)
-            {
-                oldValueChangeRoadType = temp;
-                return true;
-            }
-            return false;
-        }
-    }
 
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         characterValues = FindObjectOfType<CharacterValues>();
+        playerDistanceManager = GetComponent<PlayerDistanceManager>();
         timer = GetComponent<BuffTimer>();
+
+        motor = new();
     }
 
     private void OnEnable()
     {
-        onStopRun += StopRun;
-        onStartRun += StartRun;
         BuffTimer.OnSpeedTimerStoped += ResetBuffType;
     }
 
     private void OnDisable()
     {
-        onStopRun -= StopRun;
-        onStartRun -= StartRun;
         BuffTimer.OnSpeedTimerStoped -= ResetBuffType;
     }
 
@@ -94,11 +83,22 @@ public class PlayerMoving : MonoBehaviour
         
         accelerate = Input.GetKey(KeyCode.W);
 
-        brake = Input.GetKey(KeyCode.S);
-
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.S))
         {
-            Jump();
+            brake = true;
+            motor.MotorTorgue(accelerate, brake, buffSpeed, buff);
+            OnBrakeEvent?.Invoke(brake);
+        }
+        else if (Input.GetKeyUp(KeyCode.S))
+        {
+            brake = false;
+            motor.MotorTorgue(accelerate, brake, buffSpeed, buff);
+            OnBrakeEvent?.Invoke(brake);
+        }
+
+        if (currentBuff != BuffType.none && !buff)
+        {
+            buff = Input.GetKey(KeyCode.Space);
         }
     }
 
@@ -111,75 +111,46 @@ public class PlayerMoving : MonoBehaviour
         MovingByTransform();
     }
 
-    float SpeedAcceleration()
-    {
-        if (currentBuff == BuffType.none)
-        {
-            if (accelerate && !brake)
-            {
-                if (_currentSpeed < MaxSpeed)
-                {
-                    _currentSpeed += MaxSpeed / _currentSpeed * Time.deltaTime * 2;
-                }
-                else
-                {
-                    _currentSpeed -= MaxSpeed / _currentSpeed * Time.deltaTime;
-                }
-            }
-            else if (!accelerate && !brake){
-                if (_currentSpeed > StartSpeed)
-                {
-                    _currentSpeed -= MaxSpeed / 20 * Time.deltaTime;
-                }
-                else
-                {
-                    _currentSpeed = StartSpeed;
-                }
-            }
-            else if (!accelerate && brake)
-            {
-                if (_currentSpeed > StartSpeed)
-                {
-                    _currentSpeed -= MaxSpeed / BrakeSpeed * Time.deltaTime;
-                }
-                else
-                {
-                    _currentSpeed = StartSpeed;
-                }
-            }
-        }
-        else
-        {
-            _currentSpeed += (MaxSpeed * buffSpeed) / _currentSpeed * Time.deltaTime * 2;
-        }
-        return _currentSpeed;
-    }
-
+    #region PlayerMoving
+    
     void MovingByTransform()
     {
-        Vector3 newVelocity = LeftRight(new Vector3(0, 0, 0));
+        Vector3 newVelocity = LeftRight(rb.velocity);
 
-        newVelocity.z = SpeedAcceleration();
+        newVelocity.z = Speed();
         rb.velocity = newVelocity;
-        //newPosition.z += CurrentSpeed * Time.deltaTime;
 
+        LimitPosRot();
+
+        playerDistanceManager.SetDistanceToPoints(Distance);
+        characterValues.SetSpeed(_currentSpeed);
+    }
+    float Speed()
+    {
+        motor.MotorTorgue(accelerate, brake, buffSpeed, buff);
+        var speed = motor.CalculateSpeed();
+        return _currentSpeed = speed != 0 ? speed : _currentSpeed;
+    }
+
+    void LimitPosRot()
+    {
         var newPos = transform.position;
         if (!_roadLeftRight)
         {
-            newPos.x = Mathf.Clamp(newPos.x, -4.5f, 4.5f);
+            newPos.x = Mathf.Clamp(newPos.x, -4f, 4f);
         }
         else
         {
-            newPos.y = Mathf.Clamp(newPos.y, -4.5f, 4.5f);
+            newPos.y = Mathf.Clamp(newPos.y, -4f, 4f);
         }
         transform.position = newPos;
+    }
 
-        if (changeRoadType)
-        {
-            onChangeRoad?.Invoke();
-        }
-
-        characterValues.SetSpeedDistance(_currentSpeed, Distance);
+    float CoefBySpeed()
+    {
+        float coef = GetMaxSpeed / CurrentSpeed / 2 * StrafeSpeed;
+        coef = Mathf.Clamp(coef, 1, 40);
+        return Time.deltaTime * coef;
     }
 
     Vector3 LeftRight(Vector3 newVelocity)
@@ -188,36 +159,60 @@ public class PlayerMoving : MonoBehaviour
         {
             if (!_roadLeftRight)
             {
-                newVelocity.x = -StrafeSpeed;
+                newVelocity.x -= CoefBySpeed();
+                if (newVelocity.x < -StrafeSpeed)
+                {
+                    newVelocity.x = -StrafeSpeed;
+                }
             }
             else
             {
-                newVelocity.y = -StrafeSpeed;
+                newVelocity.y -= CoefBySpeed();
+                if (newVelocity.y < -StrafeSpeed)
+                {
+                    newVelocity.y = -StrafeSpeed;
+                }
             }
         }
         if (right)
         {
             if (!_roadLeftRight)
             {
-                newVelocity.x = StrafeSpeed;
+                newVelocity.x += CoefBySpeed();
+                if (newVelocity.x > StrafeSpeed)
+                {
+                    newVelocity.x = StrafeSpeed;
+                }
             }
             else
             {
-                newVelocity.y = StrafeSpeed;
+                newVelocity.y += CoefBySpeed();
+                if (newVelocity.x > StrafeSpeed)
+                {
+                    newVelocity.x = StrafeSpeed;
+                }
             }
         }
         return newVelocity;
     }
 
-    public void Jump()
+    public void BarrierEncounter()
     {
-        rb.AddForce(transform.up * SpeedJump, ForceMode.Impulse);
+        motor.TorgueAfterHitCar();
     }
 
-    public void BurnIntoWall()
+    public void Jump()
     {
-        onStopRun?.Invoke();
+        if (buff && currentBuff == BuffType.Jump)
+        {
+            rb.AddForce(transform.up * SpeedJump * 1000, ForceMode.Impulse);
+            buff = false;
+            //currentBuff = BuffType.none;
+        }
     }
+
+    #endregion
+
 
     /// <summary>
     /// if run - variable is true, otherwise - false
@@ -226,72 +221,59 @@ public class PlayerMoving : MonoBehaviour
     public void RunOrIdle(bool run)
     {
         IsRun = run;
-
-        if (run)
-        {
-            onStartRun?.Invoke();
-        }
-        else
-        {
-            onStopRun?.Invoke();
-        }
     }
 
-    public void FallForward()
+    public void ContinuePlaying()
     {
-        onStopRun?.Invoke();
+        currentBuff = BuffType.none;
+        buff = false;
+        buffSpeed = 0;
+        rb.isKinematic = false;
+        motor.Restart();
+        characterValues.EnableRealStats();
+        timer.StopSoundTimer();
     }
 
     public void Restart()
     {
-        onStartRun?.Invoke();
-        _isRun = true;
+        ContinuePlaying();
         _isPause = false;
-        _currentSpeed = StartSpeed;
         transform.position = new Vector3(0, 0, 0);
-        currentBuff = BuffType.none;
-        buffSpeed = 0;
-    }
-
-    public void StopRun()
-    {
-        _isRun = false;
-        Vector3 newVelocity = new Vector3(0, 0, 0);
-        newVelocity.z = 0;
-        rb.velocity = newVelocity;
-    }
-
-    public void StartRun()
-    {
-        _isRun = true;
-        Vector3 newVelocity = new Vector3(0, 0, 0);
-        newVelocity.z = _currentSpeed;
-        rb.velocity = newVelocity;
+        
+        playerDistanceManager.Restart();
     }
 
     public void SetSpeedBuff(BuffType type)
     {
-        var value = type switch
+        if (!buff && currentBuff != type)
         {
-            BuffType.SpeedBuff_1 => 2,
-            BuffType.SpeedBuff_2 => 4,
-            BuffType.SpeedBuff_3 => 6,
-            BuffType.SpeedNerf_1 => -2,
-            BuffType.SpeedNerf_2 => -4,
-            BuffType.SpeedNerf_3 => -6,
-            _ => 0
-        };
+            var value = type switch
+            {
+                BuffType.SpeedBuff_1 => 2,
+                BuffType.SpeedBuff_2 => 4,
+                BuffType.SpeedBuff_3 => 6,
+                BuffType.SpeedNerf_1 => -2,
+                BuffType.SpeedNerf_2 => -4,
+                BuffType.SpeedNerf_3 => -6,
+                _ => 0
+            };
         
-        buffSpeed = value;
-        currentBuff = type;
+            buffSpeed = value;
+            currentBuff = type;
+            timer.StartSpeed();
+        }
+    }
 
-        timer.StartSpeed();
+    public void SetJumpBuff()
+    {
+        currentBuff = BuffType.Jump;
     }
 
     public void ResetBuffType()
     {
         currentBuff = BuffType.none;
         buffSpeed = 0;
+        buff = false;
     }
 
     public void SetRoadSwap(BuffType type)
@@ -299,4 +281,13 @@ public class PlayerMoving : MonoBehaviour
         transform.position = new Vector3(type == BuffType.RoadLeft ? -9.5f : 9.5f, transform.position.y, transform.position.z);
         _roadLeftRight = true;
     }
+
+    public void GameOver()
+    {
+        motor.Restart();
+        timer.StartSoundTimer();
+        playerDistanceManager.GameOver();
+        rb.isKinematic = true;
+    }
+
 }

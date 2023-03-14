@@ -36,7 +36,7 @@ public class Barrier : MonoBehaviour
                     break;
                 case BarrierType.Wall:
                     behaviour = other.attachedRigidbody.GetComponent<PlayerBehaviour>();
-                    behaviour?.BurnIntoWall();
+                    behaviour?.StopGame();
                     break;
             }
         }

@@ -6,10 +6,12 @@ public class BarrierCar : MonoBehaviour
 {
     [Header("Расстояние от игрока для уничтожения машины-преграды")]
     [SerializeField] int DistanceDestroying = 200;
+    [SerializeField] int Speed = 20;
 
     Rigidbody rb;
-    float speed;
     Transform player;
+    float speed;
+    bool isPause = false;
 
     private void Start()
     {
@@ -17,25 +19,24 @@ public class BarrierCar : MonoBehaviour
 
         if (transform.position.x > 0)
         {
-            speed = Random.Range(5, 20);
+            speed = Speed;
         }
         else
         {
-            speed = Random.Range(-5, -20);
+            speed = -Speed;
         }
         rb = GetComponent<Rigidbody>();
+
+        rb.velocity = new Vector3(0, 0, speed);
     }
 
     private void Update()
     {
-        RemoveCar();
-    }
-
-    void FixedUpdate()
-    {
-        Vector3 newVelocity = new(0, 0, 0);
-        newVelocity.z = speed;
-        rb.velocity = newVelocity;
+        if (!isPause)
+        {
+            RemoveCar();
+            CheckPositionY();
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -55,6 +56,16 @@ public class BarrierCar : MonoBehaviour
         if ((player.position.z - transform.position.z) > DistanceDestroying)
         {
             Destroy(gameObject);
+        }
+    }
+
+    void CheckPositionY()
+    {
+        if (transform.position.y < 0)
+        {
+            var pos = transform.position;
+
+            transform.position.Set(pos.x, 0, pos.z);
         }
     }
 }
