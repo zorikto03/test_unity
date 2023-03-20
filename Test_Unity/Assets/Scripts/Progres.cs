@@ -4,48 +4,10 @@ using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
 
-[System.Serializable]
-public class PlayerInfo
-{
-    public int Coins;
-    public float RecordDistance;
-    public float MaxDangerousManeuvers;
-    public float MaxScore;
-
-    public bool SetData(float distance, float dangerousManeuvers, float maxScore)
-    {
-        bool result = false;
-        
-        if (RecordDistance < distance)
-        {
-            RecordDistance = distance;
-            result = true;
-        }
-        
-        if (MaxDangerousManeuvers < dangerousManeuvers)
-        {
-            MaxDangerousManeuvers = dangerousManeuvers;
-            result = true;
-        }
-
-        if (MaxScore < maxScore)
-        {
-            MaxScore = maxScore;
-            result = true;
-        }
-        return result;
-    }
-
-
-    public override int GetHashCode()
-    {
-        return RecordDistance.GetHashCode() ^ MaxDangerousManeuvers.GetHashCode() ^ MaxScore.GetHashCode();
-    }
-}
-
 public class Progres : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI PlayerDataUI;
+    [SerializeField] GameObject loginPanel;   
 
     public PlayerInfo PlayerInfo;
     
@@ -75,6 +37,11 @@ public class Progres : MonoBehaviour
         {
             yandex = FindObjectOfType<Yandex>();
         }
+        if (level == 0)
+        {
+            SetDataLocal();
+            ShowPlayerInfo();
+        }
     }
 
     private void Awake()
@@ -88,6 +55,9 @@ public class Progres : MonoBehaviour
 #if UNITY_WEBGL 
             //LoadExtern();
 #endif
+            SetDataLocal();
+            ShowPlayerInfo();
+            ShowLoginQuestion();
         }
     }
 
@@ -115,8 +85,35 @@ public class Progres : MonoBehaviour
         ShowPlayerInfo();
     }
 
+    void SetDataLocal()
+    {
+        var load = PlayerInfo.LocalLoad();
+        if (load.RecordDistance != 0)
+        {
+            PlayerInfo = load;
+        }
+    }
+
+    void ShowLoginQuestion()
+    {
+        if (PlayerInfo.RecordDistance != 0)
+        {
+            loginPanel.SetActive(true);
+        }
+    }
+
     public void ShowPlayerInfo()
     {
         PlayerDataUI.text = $"Coins: {PlayerInfo.Coins}\nMax Distance: {PlayerInfo.RecordDistance}\nMax Dangerous Maneuvers: {PlayerInfo.MaxDangerousManeuvers}\nMax Score: {PlayerInfo.MaxScore}";
+    }
+
+    public void Login()
+    {
+        yandex.LoginButton();
+    }
+
+    public void DisableLoginPanel()
+    {
+        loginPanel.SetActive(false);
     }
 }

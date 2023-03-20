@@ -20,6 +20,13 @@
       }
     },
 
+    CheckRateGame: function(){
+      ysdk.feedback.canReview()
+          .then(({ value, reason }) => {
+              myGameInstance.SendMessage('Yandex', 'ActivateRateGameButton', value);
+          })
+    },
+
     RateGame: function(){
       ysdk.feedback.canReview()
           .then(({ value, reason }) => {
@@ -30,7 +37,8 @@
                           console.log(feedbackSent);
                       })
               } else {
-                  console.log(reason)
+                  console.log(reason);
+                  myGameInstance.SendMessage('Yandex', 'ActivateRateGameButton', value);
               }
           })
     },
@@ -79,12 +87,15 @@
       ysdk.adv.showFullscreenAdv({
         callbacks: {
             onOpen: () => {
+              myGameInstance.SendMessage('Yandex', 'GamePauseYandex');
               console.log("------Adv was opened -------");
             },
             onClose: function(wasShown) {
+              myGameInstance.SendMessage('Yandex', 'GamePlayYandex');
               console.log("------Adv was closed -------");
             },
             onError: function(error) {
+              myGameInstance.SendMessage('Yandex', 'GamePlayYandex');
               console.log(error);
             }
           }
@@ -95,16 +106,19 @@
       ysdk.adv.showRewardedVideo({
         callbacks: {
             onOpen: () => {
+              myGameInstance.SendMessage('Yandex', 'GamePauseYandex');
               console.log('Video ad open.');
             },
             onRewarded: () => {
-              console.log('Rewarded!');
               myGameInstance.SendMessage('Yandex', 'OnRewarded');
+              console.log('Rewarded!');
             },
             onClose: () => {
+              myGameInstance.SendMessage('Yandex', 'GamePlayYandex');
               console.log('Video ad closed.');
             }, 
             onError: (e) => {
+              myGameInstance.SendMessage('Yandex', 'GamePlayYandex');
               console.log('Error while open video ad:', e);
             }
         }
@@ -113,16 +127,42 @@
 
     Login: function(){
       console.log('Login function called');
-      auth();
-      myGameInstance.SendMessage('Yandex', 'LoginResult', player ? true : false);
-      
-      if (player){
-        GetPlayerData();
-        LoadExtern(); 
-      }
-      else{
+      /**
+      var promise = new Promise(function(resolve, reject) {
+        initPlayer().then(_player => {
+          console.log('auth/initPlayer/then');
+            if (_player.getMode() === 'lite') {
+                // Игрок не авторизован.
+                ysdk.auth.openAuthDialog().then(() => {
+                  resolve("result");
+                  // Игрок успешно авторизован
+                    initPlayer().catch(err => {
+                        console.log(err);
+                        reject(new Error('error'));
+                        // Ошибка при инициализации объекта Player.
+                    });
+                }).catch(() => {
+                    // Игрок не авторизован.
+                });
+            }
+          }).catch(err => {
+              console.log(err);
+              reject(new Error('error'));
+              // Ошибка при инициализации объекта Player.
+          });
+          resolve("result");
+        }
+      ).
+      then(
+        result => {
+          myGameInstance.SendMessage('Progres', 'DisableLoginPanel');
+          LoadExtern(); 
+          GetPlayerData();
+      }).
+      catch(err => {
         console.log('player not login');
-      }
+      });
+      */
     },
 
     Logging: function(data){

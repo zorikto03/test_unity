@@ -44,4 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42056a0bb411e08458fafb1d5a96d033, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Coins: 0
+  PlayerDataUI: {fileID: 0}
+  loginPanel: {fileID: 0}
+  PlayerInfo:
+    Coins: 0
+    RecordDistance: 0
+    MaxDangerousManeuvers: 0
+    MaxScore: 0

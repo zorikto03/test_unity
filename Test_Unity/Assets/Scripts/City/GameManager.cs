@@ -29,14 +29,15 @@ public class GameManager : MonoBehaviour
         PlayerBehaviour.GameOverEvent += GameOver;
         Yandex.RewardEvent += FreeHeartByWatchingVideo;
         Yandex.LoginEvent += LoginCanvasClose;
+        Yandex.GamePauseEvent += GamePauseHandler;
     }
-
 
     private void OnDisable()
     {
         PlayerBehaviour.GameOverEvent -= GameOver;
         Yandex.RewardEvent -= FreeHeartByWatchingVideo;
         Yandex.LoginEvent -= LoginCanvasClose;
+        Yandex.GamePauseEvent -= GamePauseHandler;
     }
 
     private void Start()
@@ -106,10 +107,11 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         Time.timeScale = 0f;
-
         GameOverMenu.SetActive(true);
+
         try
         {
+            yandex.CheckRateGameButton();
             yandex.ShowFullScreenAdvExternal();
         }
         catch(Exception ex)
@@ -160,5 +162,11 @@ public class GameManager : MonoBehaviour
         questionLogin = true;
         LoginCanvas.SetActive(false);
         GameOverMenu.SetActive(true);
+    }
+
+    private void GamePauseHandler(bool value)
+    {
+        isPause = value;
+        PauseTimeSound();
     }
 }

@@ -11,7 +11,7 @@ using UnityEngine.UI;
 public class Yandex : MonoBehaviour
 {
     [SerializeField] PlayerDataFromYandex playerDataYandex;
-    [SerializeField] GameObject rateGameButton;
+    [SerializeField] Button rateGameButton;
 
     [DllImport("__Internal")]
     private static extern void Hello();
@@ -21,6 +21,9 @@ public class Yandex : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern void RateGame();
+
+    [DllImport("__Internal")]
+    private static extern void CheckRateGame();
 
     [DllImport("__Internal")]
     private static extern void ShowFullScreenAdv();
@@ -42,6 +45,10 @@ public class Yandex : MonoBehaviour
 
     public static Action RewardEvent;
     public static Action LoginEvent;
+
+    public delegate void GamePause(bool value);
+    public static GamePause GamePauseEvent;
+
     public string PlayerName => _playerName;
 
     void Awake()
@@ -77,12 +84,19 @@ public class Yandex : MonoBehaviour
 #endif
     }
 
+    public void CheckRateGameButton()
+    {
+        CheckRateGame();
+    }
+
+    public void ActivateRateGameButton(bool value)
+    {
+        rateGameButton.interactable = value;
+    }
+
     public void SetFeedbackValue(bool value)
     {
-        if (value)
-        {
-            rateGameButton.SetActive(false);
-        }
+        rateGameButton.interactable = !value;
     }
 
     public void SetName(string name)
@@ -156,5 +170,15 @@ public class Yandex : MonoBehaviour
 
         Debug.Log(result);
         playerDataYandex.SetLeaderBoard(result);
+    }
+
+    public void GamePlayYandex()
+    {
+        GamePauseEvent?.Invoke(false);
+    }
+
+    public void GamePauseYandex()
+    {
+        GamePauseEvent?.Invoke(true);
     }
 }
