@@ -3,18 +3,27 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Yandex : MonoBehaviour
 {
-    [SerializeField] PlayerDataFromYandex playerDataYandex;
-    [SerializeField] Button rateGameButton;
+    [SerializeField] GameObject loginPanel;
+
+    public static Action RewardEvent;
+    public static Action GameInstanceLoadedEvent;
+    public delegate void GamePause(bool value);
+    public static GamePause GamePauseEvent;
+
+    public delegate void ActivateRateButton(bool value);
+    public static ActivateRateButton ActivateRateButtonEvent;
+
 
     [DllImport("__Internal")]
-    private static extern void Hello();
+    private static extern void Login();
+    [DllImport("__Internal")]
+    private static extern void CheckLogin();
 
     [DllImport("__Internal")]
     private static extern void GetPlayerData();
@@ -35,47 +44,30 @@ public class Yandex : MonoBehaviour
     private static extern void GetLeaderboard();
 
     [DllImport("__Internal")]
-    private static extern void Login();
-
-    [DllImport("__Internal")]
     private static extern void Logging(string text);
 
-    string _playerName = string.Empty;
-    Texture2D _playerImage = null;
+    [DllImport("__Internal")]
+    private static extern void SaveExtern(string data);
 
-    public static Action RewardEvent;
-    public static Action LoginEvent;
+    [DllImport("__Internal")]
+    private static extern void LoadExtern();
 
-    public delegate void GamePause(bool value);
-    public static GamePause GamePauseEvent;
+    [DllImport("__Internal")]
+    private static extern void SetLeaderBoardScore(int score);
 
-    public string PlayerName => _playerName;
 
-    void Awake()
+    Progres progres;
+
+    private void Start()
     {
-        try
-        {
-#if UNITY_WEBGL
-            //GetPlayerData();
-#endif
-        }
-        catch (Exception ex)
-        {
-            Debug.Log(ex.Message);
-        }
+        ShowLoginQuestion();
     }
 
-    public void LoginButton()
+    private void Awake()
     {
-#if UNITY_WEBGL
-        Login();
-#endif
+        progres = FindObjectOfType<Progres>();
     }
 
-    public void LoginResult(bool result)
-    {
-        LoginEvent?.Invoke();
-    }
 
     public void RateGameButton()
     {
@@ -89,24 +81,26 @@ public class Yandex : MonoBehaviour
         CheckRateGame();
     }
 
-    public void ActivateRateGameButton(bool value)
+    public void ActivateRateGameButton(string valueString)
     {
-        rateGameButton.interactable = value;
+        bool value = JsonUtility.FromJson<bool>(valueString);
+        ActivateRateButtonEvent?.Invoke(value);
     }
 
-    public void SetFeedbackValue(bool value)
+    public void SetFeedbackValue(string valueString)
     {
-        rateGameButton.interactable = !value;
+        bool value = JsonUtility.FromJson<bool>(valueString);
+        ActivateRateButtonEvent?.Invoke(!value);
     }
 
     public void SetName(string name)
     {
-        _playerName = name;
-        playerDataYandex.SetName(_playerName);
+        Logger("SetName called: " + name);
     }
 
     public void SetPhoto(string url)
     {
+        Logger("SetPhoto called");
         StartCoroutine(DownLoadPhoto(url));
     }
 
@@ -121,8 +115,7 @@ public class Yandex : MonoBehaviour
         }
         else
         {
-            _playerImage = ((DownloadHandlerTexture)request.downloadHandler).texture;
-            playerDataYandex.SetPhoto(_playerImage);
+            //progres.PlayerImage = ((DownloadHandlerTexture)request.downloadHandler).texture;
         }
     }
 
@@ -158,7 +151,7 @@ public class Yandex : MonoBehaviour
         var entries = jsonObject.GetValue("entries");
         if (entries != null)
         {
-            foreach(var entry in entries)
+            foreach (var entry in entries)
             {
                 var entr = (JObject)entry;
                 var score = entr.GetValue("score");
@@ -169,7 +162,6 @@ public class Yandex : MonoBehaviour
         }
 
         Debug.Log(result);
-        playerDataYandex.SetLeaderBoard(result);
     }
 
     public void GamePlayYandex()
@@ -180,5 +172,47 @@ public class Yandex : MonoBehaviour
     public void GamePauseYandex()
     {
         GamePauseEvent?.Invoke(true);
+    }
+
+    public void LoginYandex()
+    {
+        Login();
+    }
+    public void CheckLoginYandex()
+    {
+        CheckLogin();
+    }
+
+    public void Logger(string logString)
+    {
+        Logging(logString);
+    }
+
+    public void GameInstanceLoaded()
+    {
+        GameInstanceLoadedEvent?.Invoke();
+    }
+
+    public void SaveData(string json)
+    {
+        SaveExtern(json);
+    }
+
+    public void SetLeaderBoardScoreData(int value)
+    {
+        SetLeaderBoardScore(value);
+    }
+
+    void ShowLoginQuestion()
+    {
+        Logger("ShowLoginQuestion called: progres.LoggedIn is " + progres.LoggedIn);
+        loginPanel.SetActive(!progres.LoggedIn);
+    }
+
+    public void DisableLoginPanel()
+    {
+        Logger("DisableLoginPanel called");
+        progres.LoggedIn = true;
+        loginPanel.SetActive(false);
     }
 }

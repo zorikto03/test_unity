@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class PlayerMoving : MonoBehaviour
 {
-    [SerializeField] float MaxSpeed = 20;
     [SerializeField] float StrafeSpeed = 10;
     [SerializeField] float SpeedJump = 10;
     [SerializeField] Camera cam;
     [SerializeField] Motor motor;
+    [SerializeField] float horizontal;
 
     public static Action onChangeRoad;
     public delegate void BrakeEvent(bool isBrake);
@@ -77,10 +77,19 @@ public class PlayerMoving : MonoBehaviour
 
     void Update()
     {
-        left = Input.GetKey(KeyCode.A);
-        
-        right = Input.GetKey(KeyCode.D);
-        
+        horizontal = Input.GetAxis("Horizontal");
+        if (horizontal == -1)
+        {
+            left = true;
+        }
+        else { left = false; }
+
+        if (horizontal == 1)
+        {
+            right = true;
+        }
+        else { right = false; }
+
         accelerate = Input.GetKey(KeyCode.W);
 
         if (Input.GetKeyDown(KeyCode.S))

@@ -117,7 +117,7 @@ public class Motor
                 {
                     if (brake)
                     {
-                        _motorTorgue -= 4500 * Time.deltaTime;
+                        _motorTorgue -= 6000 * Time.deltaTime;
                         lock (decelerationLocker)
                         {
                             _manualBraking = true;

@@ -9,7 +9,6 @@ public class mainCamera : MonoBehaviour
     [SerializeField] float OffsetZ = -4;
     [SerializeField] int RotationX = 27;
     [SerializeField] float SpeedRotate = 10;
-    [SerializeField] float SpeedMoveToPlace = 10;
 
     //PostProcessVolume PostProcessing;
     //Vignette _vignette;
@@ -18,7 +17,7 @@ public class mainCamera : MonoBehaviour
     
     PlayerMoving player;
     Vector3 basicRot;
-    bool left, right, isShake;
+    bool left, right;
     float _eulerX, _eulerZ;
     int minFOV = 60;
     int maxFOV = 70;
@@ -42,13 +41,14 @@ public class mainCamera : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey("a"))
+        var horizontal = Input.GetAxis("Horizontal");
+        if (horizontal == -1)
         {
             left = true;
         }
         else { left = false; }
 
-        if (Input.GetKey("d"))
+        if (horizontal == 1)
         {
             right = true;
         }
@@ -192,15 +192,14 @@ public class mainCamera : MonoBehaviour
 
     public void ShakeCamera()
     {
-        StartCoroutine(Shake(0.7f, 0.5f, 10f));
+        StartCoroutine(Shake(0.5f, 1f, 10f));
     }
     private IEnumerator Shake(float duration, float magnitude, float noize)
     {
-        isShake = true;
         //Инициализируем счётчиков прошедшего времени
         float elapsed = 0f;
         //Сохраняем стартовую локальную позицию
-        Vector3 startPosition = transform.localPosition;
+        Vector3 startPosition = transform.position;
         //Генерируем две точки на "текстуре" шума Перлина
         Vector2 noizeStartPoint0 = Random.insideUnitCircle * noize;
         Vector2 noizeStartPoint1 = Random.insideUnitCircle * noize;
@@ -216,16 +215,14 @@ public class mainCamera : MonoBehaviour
             cameraPostionDelta *= magnitude;
 
             //Перемещаем камеру в нувую координату
-            startPosition.z = transform.localPosition.z;
-            //startPosition.y = transform.localPosition.y;
-            //startPosition.x = transform.localPosition.x;
-            transform.localPosition = startPosition + (Vector3)cameraPostionDelta;
+            startPosition.z = transform.position.z;
+            startPosition.x = transform.position.x;
+            transform.position = startPosition + (Vector3)cameraPostionDelta;
 
             //Увеличиваем счётчик прошедшего времени
             elapsed += Time.deltaTime;
             //Приостанавливаем выполнение корутины, в следующем кадре она продолжит выполнение с данной точки
             yield return null;
         }
-        isShake = false;
     }
 }

@@ -34,13 +34,10 @@ public class MenuCamera : MonoBehaviour
     [SerializeField] float FOV = 40;
 
     Camera cam;
-    float _timeRemaining;
-    int currentPosition = 0;
 
     private void Start()
     {
         cam = GetComponent<Camera>();
-        _timeRemaining = TimeToChangePosition;
     }
     
     //void LateUpdate()

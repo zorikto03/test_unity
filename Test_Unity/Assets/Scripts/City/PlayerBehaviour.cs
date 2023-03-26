@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class PlayerBehaviour : MonoBehaviour
@@ -8,7 +9,9 @@ public class PlayerBehaviour : MonoBehaviour
     [SerializeField] int HealthPoint;
     [SerializeField] CoinManager coinManager;
     [SerializeField] GameObject hitEffect;
-    [SerializeField] float ImmortalTime = 1f;
+    [SerializeField] float ImmortalTime = 5f;
+    [SerializeField] GameObject ImmortalUI;
+    [SerializeField] TextMeshProUGUI ImmortalTimeRemainingText;
 
     PlayerMoving playerMoving;
     CharacterValues characterValues;
@@ -23,6 +26,7 @@ public class PlayerBehaviour : MonoBehaviour
     public delegate void HpPlusEvent(int countHP);
     public static event HpPlusEvent HPPlusEvent;
     public static Action GameOverEvent;
+    public static Action Immortal;
 
     private void Start()
     {
@@ -35,6 +39,11 @@ public class PlayerBehaviour : MonoBehaviour
         characterValues.SetHP(HealthPoint);
     }
 
+    private void OnEnable()
+    {
+        Immortal += ImmortalHandler;
+    }
+
     private void Update()
     {
         if (_immortal)
@@ -42,11 +51,13 @@ public class PlayerBehaviour : MonoBehaviour
             if (_immortalTime > 0)
             {
                 _immortalTime -= Time.deltaTime;
+                ImmortalTimeRemainingText.text = _immortalTime.ToString("0.00");
             }
             else
             {
                 _immortalTime = 0;
                 _immortal = false;
+                ImmortalUI.SetActive(false);
             }
         }
     }
@@ -81,8 +92,9 @@ public class PlayerBehaviour : MonoBehaviour
         }
     }
 
-    public void SetImmortal()
+    void ImmortalHandler()
     {
+        ImmortalUI.SetActive(true);
         _immortal = true;
         _immortalTime = ImmortalTime;
     }
@@ -165,7 +177,7 @@ public class PlayerBehaviour : MonoBehaviour
     {
         HealthPoint = 1;
         characterValues.SetHP(HealthPoint);
-        SetImmortal();
+        Immortal.Invoke();
     }
 
     public void Restart()

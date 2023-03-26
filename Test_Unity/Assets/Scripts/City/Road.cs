@@ -61,11 +61,10 @@ public class Road : MonoBehaviour
         if (Random.Range(0, 2) == 1)
         {
             var rand = Random.Range(0, buffs.Count);
-            var buff = Instantiate(buffs[rand], parent);
             
             var pos = chunks[0].transform.localPosition;
             var randPosX = Random.Range(1, 5);
-            pos.y = 0.5f;
+            pos.y = 1f;
             pos.x = randPosX switch
             {
                 1 => -4,
@@ -75,6 +74,7 @@ public class Road : MonoBehaviour
                 _ => 4
             };
 
+            var buff = Instantiate(buffs[rand], pos, transform.rotation, parent);
             buff.transform.localPosition = pos;
         }
     }

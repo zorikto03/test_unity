@@ -22,13 +22,13 @@ public class GameManager : MonoBehaviour
 
     Yandex yandex;
     bool isPause;
-    bool questionLogin = false;
+    bool focus;
+    bool gameOver;
     
     private void OnEnable()
     {
         PlayerBehaviour.GameOverEvent += GameOver;
         Yandex.RewardEvent += FreeHeartByWatchingVideo;
-        Yandex.LoginEvent += LoginCanvasClose;
         Yandex.GamePauseEvent += GamePauseHandler;
     }
 
@@ -36,7 +36,6 @@ public class GameManager : MonoBehaviour
     {
         PlayerBehaviour.GameOverEvent -= GameOver;
         Yandex.RewardEvent -= FreeHeartByWatchingVideo;
-        Yandex.LoginEvent -= LoginCanvasClose;
         Yandex.GamePauseEvent -= GamePauseHandler;
     }
 
@@ -54,15 +53,22 @@ public class GameManager : MonoBehaviour
 
     void OnApplicationFocus(bool hasFocus)
     {
-        isPause = !hasFocus;
-        PauseTimeSound();
+        var sceneIndex = SceneManager.GetActiveScene().buildIndex;
+        if (sceneIndex == 1)
+        {
+            if (!hasFocus && !gameOver)
+            {
+                Pause();
+            }
+        }
+        else
+        {
+            isPause = !hasFocus;
+            PauseTimeSound();
+        }
+        
     }
 
-    void OnApplicationPause(bool pauseStatus)
-    {
-        isPause = pauseStatus;
-        PauseTimeSound();
-    }
 
     public void Play()
     {
@@ -76,15 +82,16 @@ public class GameManager : MonoBehaviour
         isPause = true;
         PauseTimeSound();
 
-        SettingsMenu.SetActive(true);
+        SettingsMenu?.SetActive(true);
     }
 
     public void Continue()
     {
         isPause = false;
         PauseTimeSound();
-        SettingsMenu.SetActive(false);
+        SettingsMenu?.SetActive(false);
     }
+
     void PauseTimeSound()
     {
         Time.timeScale = isPause ? 0f : 1f;
@@ -92,6 +99,7 @@ public class GameManager : MonoBehaviour
     }
     public void ToMainMenu()
     {
+        gameOver = false;
         isPause = false;
         PauseTimeSound();
         SceneManager.LoadScene("Menu");
@@ -106,15 +114,15 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        gameOver = true;
         Time.timeScale = 0f;
         GameOverMenu.SetActive(true);
 
         try
         {
-            yandex.CheckRateGameButton();
             yandex.ShowFullScreenAdvExternal();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.Log(ex.Message);
         }
@@ -128,6 +136,7 @@ public class GameManager : MonoBehaviour
 
     public void Restart()
     {
+        gameOver = false;
         isPause = false;
         PauseTimeSound();
         character.Restart();
@@ -141,6 +150,7 @@ public class GameManager : MonoBehaviour
 
     public void ContinuePlaying()
     {
+        gameOver = false;
         isPause = false;
         PauseTimeSound();
         ContinueButton.SetActive(false);
@@ -157,16 +167,9 @@ public class GameManager : MonoBehaviour
         RewardedAdvButton.SetActive(false);
     }
 
-    public void LoginCanvasClose()
-    {
-        questionLogin = true;
-        LoginCanvas.SetActive(false);
-        GameOverMenu.SetActive(true);
-    }
 
     private void GamePauseHandler(bool value)
     {
-        isPause = value;
-        PauseTimeSound();
+        AudioListener.pause = value;
     }
 }

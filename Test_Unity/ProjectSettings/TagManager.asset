@@ -12,6 +12,7 @@ TagManager:
   - EndRoad
   - BarrierCar
   - ParticleSystem
+  - LoginPanel
   layers:
   - Default
   - TransparentFX

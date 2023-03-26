@@ -28,6 +28,11 @@ public class CarSound : MonoBehaviour
     {
         PlayerMoving.OnBrakeEvent -= OnBrakeEventHandler;
         BuffTimer.OnSoundStoped -= OnSoundStopedHandler;
+
+        motorSound.Stop();
+        hitSound.Stop();
+        alarmSound.Stop();
+        brakeSound.Stop();
     }
 
     private void OnSoundStopedHandler()
@@ -113,6 +118,7 @@ public class CarSound : MonoBehaviour
 
     public void AlarmSoundPlay()
     {
+        motorSound.Stop();
         alarmSound.Play();
         brakeSound.Stop();
     }
